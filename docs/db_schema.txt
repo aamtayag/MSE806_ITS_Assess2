@@ -1,0 +1,70 @@
+
+
+# This table records individual parking sessions for users, including entry and exit times along with fee and payment status information.
+create table parkingtransactions (
+    transaction_id int primary key auto_increment,
+    user_id int not null,
+    parking_lot_id int not null,
+    vehicle_plate varchar(20),
+    entry_time datetime not null,
+    exit_time datetime,
+    parking_fee decimal(8,2),
+    payment_status enum('pending', 'paid', 'cancelled') default 'pending',
+    created_at datetime default current_timestamp,
+    updated_at datetime default current_timestamp on update current_timestamp,
+    foreign key (user_id) references users(user_id),
+    foreign key (parking_lot_id) references parkinglots(lot_id)
+);
+
+
+# This table stores details about each parking facility, including location, capacity, and current availability.
+create table parkinglots (
+    lot_id int primary key auto_increment,
+    name varchar(100) not null,
+    address varchar(255),
+    latitude decimal(9,6),
+    longitude decimal(9,6),
+    total_spaces int not null,
+    available_spaces int,
+    created_at datetime default current_timestamp,
+    updated_at datetime default current_timestamp on update current_timestamp
+);
+
+# This table holds AI-generated predictions about parking occupancy and availability. It can be used for forecasting future parking conditions.
+create table ai_predictions (
+    prediction_id int primary key auto_increment,
+    lot_id int not null,
+    prediction_time datetime not null,
+    predicted_occupied_spaces int,
+    predicted_available_spaces int,
+    predicted_occupancy_rate decimal(5,2),
+    confidence_score decimal(4,2),
+    model_version varchar(50),
+    created_at datetime default current_timestamp,
+    foreign key (lot_id) references parkinglots(lot_id)
+);
+
+# This table manages user information for both customers and system administrators.
+create table users (
+    user_id int primary key auto_increment,
+    username varchar(50) not null unique,
+    email varchar(100) not null unique,
+    password_hash varchar(255) not null,
+    phone varchar(20),
+    user_type enum('customer', 'admin') default 'customer',
+    created_at datetime default current_timestamp,
+    updated_at datetime default current_timestamp on update current_timestamp
+);
+
+# This table logs payment details linked to parking transactions, including the method, amount, and status of each payment.
+create table payments (
+    payment_id int primary key auto_increment,
+    transaction_id int not null,
+    amount decimal(8,2) not null,
+    payment_method enum('credit card', 'debit card', 'mobile wallet', 'cash') not null,
+    payment_date datetime default current_timestamp,
+    payment_status enum('pending', 'completed', 'failed') default 'pending',
+    created_at datetime default current_timestamp,
+    updated_at datetime default current_timestamp on update current_timestamp,
+    foreign key (transaction_id) references parkingtransactions(transaction_id)
+);
