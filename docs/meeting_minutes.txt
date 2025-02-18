@@ -1,0 +1,23 @@
+
+### Meeting minutes
+
+
+# 17 February (Monday), 3pm-4pm
+System Components:
+1. Data capture engine
+2. Real-time parking recommendation engine
+3. Analytics and prediction engine
+
+Database schema:
+sample table structure for below tables:
+1. ParkingTransactions
+2. ParkingLots 
+3. AI_Predictions
+4. Users
+5. Payments
+
+Github repository / Database tables - aries
+System architecture - aries
+Data capture web page - wen
+Data provisioning algorithm - hengpan
+
