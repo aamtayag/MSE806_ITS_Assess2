@@ -5,6 +5,7 @@
 
 
 1. Discussed the db schema
+      - added column (prediction_description) to ai_predictions
 
 2. New Zealand Transverse Mercator (NZTM2000, EPSG:2193)
    Python package to transform data into latitude/longitude
