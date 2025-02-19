@@ -1,71 +1,98 @@
 
 
 # This table records individual parking sessions for users, including entry and exit times along with fee and payment status information.
-create table parkingtransactions (
-    transaction_id int primary key auto_increment,
-    user_id int not null,
-    parking_lot_id int not null,
-    vehicle_plate varchar(20),
-    entry_time datetime not null,
-    exit_time datetime,
-    parking_fee decimal(8,2),
-    payment_status enum('pending', 'paid', 'cancelled') default 'pending',
-    created_at datetime default current_timestamp,
-    updated_at datetime default current_timestamp on update current_timestamp,
-    foreign key (user_id) references users(user_id),
-    foreign key (parking_lot_id) references parkinglots(lot_id)
+CREATE TABLE parkingtransactions (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    parking_lot_id INTEGER NOT NULL,
+    vehicle_plate TEXT,
+    entry_time DATETIME NOT NULL,
+    exit_time DATETIME,
+    parking_fee REAL, -- equivalent to decimal(8,2)
+    payment_status TEXT DEFAULT 'pending' CHECK(payment_status IN ('pending', 'paid', 'cancelled')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (parking_lot_id) REFERENCES parkinglots(lot_id)
 );
+
+CREATE TRIGGER update_parkingtransactions_updated_at
+AFTER UPDATE ON parkingtransactions
+FOR EACH ROW
+BEGIN
+    UPDATE parkingtransactions
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE transaction_id = OLD.transaction_id;
+END;
 
 
 # This table stores details about each parking facility, including location, capacity, and current availability.
-create table parkinglots (
-    lot_id int primary key auto_increment,
-    name varchar(100) not null,
-    address varchar(255),
-    latitude decimal(9,6),
-    longitude decimal(9,6),
-    total_spaces int not null,
-    available_spaces int,
-    created_at datetime default current_timestamp,
-    updated_at datetime default current_timestamp on update current_timestamp
+CREATE TABLE parkinglots (
+    lot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    address TEXT,
+    latitude REAL,
+    longitude REAL,
+    total_spaces INTEGER NOT NULL,
+    available_spaces INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TRIGGER update_parkinglots_updated_at
+AFTER UPDATE ON parkinglots
+FOR EACH ROW
+BEGIN
+    UPDATE parkinglots 
+    SET updated_at = CURRENT_TIMESTAMP 
+    WHERE lot_id = OLD.lot_id;
+END;
+
 # This table holds AI-generated predictions about parking occupancy and availability. It can be used for forecasting future parking conditions.
-create table ai_predictions (
-    prediction_id int primary key auto_increment,
-    lot_id int not null,
-    prediction_description varchar(200),
-    prediction_time datetime not null,
-    predicted_occupied_spaces int,
-    predicted_available_spaces int,
-    predicted_occupancy_rate decimal(5,2),
-    confidence_score decimal(4,2),
-    model_version varchar(50),
-    created_at datetime default current_timestamp,
-    foreign key (lot_id) references parkinglots(lot_id)
+CREATE TABLE ai_predictions (
+    prediction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lot_id INTEGER NOT NULL,
+    prediction_description TEXT,
+    prediction_time DATETIME NOT NULL,
+    predicted_occupied_spaces INTEGER,
+    predicted_available_spaces INTEGER,
+    predicted_occupancy_rate REAL,  -- equivalent to decimal(5,2)
+    confidence_score REAL,          -- equivalent to decimal(4,2)
+    model_version TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lot_id) REFERENCES parkinglots(lot_id)
 );
 
 # This table manages user information for both customers and system administrators.
-create table users (
-    user_id int primary key auto_increment,
-    username varchar(50) not null unique,
-    email varchar(100) not null unique,
-    password_hash varchar(255) not null,
-    phone varchar(20),
-    user_type enum('customer', 'admin') default 'customer',
-    created_at datetime default current_timestamp,
-    updated_at datetime default current_timestamp on update current_timestamp
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    phone TEXT,
+    user_type TEXT DEFAULT 'customer' CHECK(user_type IN ('customer','admin')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 # This table logs payment details linked to parking transactions, including the method, amount, and status of each payment.
-create table payments (
-    payment_id int primary key auto_increment,
-    transaction_id int not null,
-    amount decimal(8,2) not null,
-    payment_method enum('credit card', 'debit card', 'mobile wallet', 'cash') not null,
-    payment_date datetime default current_timestamp,
-    payment_status enum('pending', 'completed', 'failed') default 'pending',
-    created_at datetime default current_timestamp,
-    updated_at datetime default current_timestamp on update current_timestamp,
-    foreign key (transaction_id) references parkingtransactions(transaction_id)
+CREATE TABLE payments (
+    payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER NOT NULL,
+    amount REAL NOT NULL,  -- equivalent to decimal(8,2)
+    payment_method TEXT NOT NULL CHECK(payment_method IN ('credit card', 'debit card', 'mobile wallet', 'cash')),
+    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    payment_status TEXT DEFAULT 'pending' CHECK(payment_status IN ('pending', 'completed', 'failed')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES parkingtransactions(transaction_id)
 );
+
+CREATE TRIGGER update_payments_updated_at
+AFTER UPDATE ON payments
+FOR EACH ROW
+BEGIN
+    UPDATE payments
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE payment_id = OLD.payment_id;
+END;
