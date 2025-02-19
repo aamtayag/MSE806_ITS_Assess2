@@ -1,6 +1,19 @@
 
 ### Meeting minutes
 
+# 19 February (Wednesday), 3pm-5pm
+
+
+1. Discussed the db schema
+
+2. New Zealand Transverse Mercator (NZTM2000, EPSG:2193)
+   Python package to transform data into latitude/longitude
+
+3. Data generation algorithm - provided by Hengpan
+
+
+
+
 
 # 17 February (Monday), 3pm-4pm
 System Components:

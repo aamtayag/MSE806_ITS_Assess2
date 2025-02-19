@@ -34,6 +34,7 @@ create table parkinglots (
 create table ai_predictions (
     prediction_id int primary key auto_increment,
     lot_id int not null,
+    prediction_description varchar(200),
     prediction_time datetime not null,
     predicted_occupied_spaces int,
     predicted_available_spaces int,
