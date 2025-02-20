@@ -2,6 +2,7 @@
 # Use SQLite for this Smart Parking Management System project
 
 # Create database
+create database SmartParking.db
 
 # This table records individual parking sessions for users, including entry and exit times along with fee and payment status information.
 CREATE TABLE parkingtransactions (
