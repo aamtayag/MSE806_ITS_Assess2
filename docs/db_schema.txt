@@ -35,6 +35,8 @@ CREATE TABLE parkinglots (
     lot_id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     address TEXT,
+    price_per_hour REAL,
+    open_hours TEXT,
     latitude REAL,
     longitude REAL,
     total_spaces INTEGER NOT NULL,
@@ -100,3 +102,82 @@ BEGIN
     SET updated_at = CURRENT_TIMESTAMP
     WHERE payment_id = OLD.payment_id;
 END;
+
+
+
+
+
+
+
+>>> import pandas as pd
+>>> import sqlite3
+>>> df = pd.read_csv('Parking_Transactions.csv')
+>>> conn = sqlite3.connect('SmartParking.db')
+>>> df.to_sql(
+...    name='parkingdata',
+...    con=conn,
+...    if_exists='replace',
+...    index=False
+... )
+
+alter table parkingdata rename column "Last Updated" to last_updated;
+CREATE TABLE parkingdata1 (
+    transaction_id INTEGER PRIMARY KEY,
+    source TEXT,
+    duration_in_mins REAL,
+    start_time DATETIME,
+    end_time DATETIME,
+    amount REAL,
+    kiosk_id REAL,
+    app_zone_id INTEGER,
+    app_zone_group INTEGER,
+    payment_method TEXT,
+    location_group TEXT,
+    last_updated DATETIME
+);
+
+update parkingdata set parking_lot_id=38 where location_group='Unknown Location';
+update parkingdata set parking_lot_id=37 where location_group='Garrison Pool';
+update parkingdata set parking_lot_id=36 where location_group='Northwest Pool';
+update parkingdata set parking_lot_id=35 where location_group='Bartholomew Pool';
+update parkingdata set parking_lot_id=34 where location_group='Woods of Westlake';
+update parkingdata set parking_lot_id=33 where location_group='Colorado River';
+update parkingdata set parking_lot_id=32 where location_group='Deep Eddy Pool';
+update parkingdata set parking_lot_id=31 where location_group='MoPac Lot';
+update parkingdata set parking_lot_id=30 where location_group='Walsh';
+update parkingdata set parking_lot_id=29 where location_group='Austin High';
+update parkingdata set parking_lot_id=28 where location_group='Butler Shores';
+update parkingdata set parking_lot_id=27 where location_group='MACC Lot';
+update parkingdata set parking_lot_id=26 where location_group='Walter';
+update parkingdata set parking_lot_id=25 where location_group="Dawson's Lot";
+update parkingdata set parking_lot_id=24 where location_group='Emma';
+update parkingdata set parking_lot_id=23 where location_group='Toomey';
+update parkingdata set parking_lot_id=22 where location_group='Rainey';
+update parkingdata set parking_lot_id=21 where location_group='West Campus';
+update parkingdata set parking_lot_id=20 where location_group='Mueller';
+update parkingdata set parking_lot_id=19 where location_group='East Austin';
+update parkingdata set parking_lot_id=18 where location_group='Non-Core';
+update parkingdata set parking_lot_id=17 where location_group='Core';
+
+632|Unknown Location - 38
+2105|Garrison Pool - 37
+3318|Northwest Pool -36
+4338|Bartholomew Pool - 35
+8343|Woods of Westlake - 34
+24591|Colorado River - 33
+29460|Deep Eddy Pool - 32
+38263|MoPac Lot - 31
+42989|Walsh - 30
+46852|Austin High - 29
+50015|Butler Shores - 28
+54344|MACC Lot - 27
+88242|Walter - 26
+88679|Dawson's Lot - 25
+111335|Emma - 24
+181129|Toomey - 23
+215175|Rainey - 22
+403543|West Campus - 21
+412506|Mueller - 20
+769571|East Austin - 19
+814819|Non-Core - 18
+2912216|Core - 17
