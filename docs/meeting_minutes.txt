@@ -1,9 +1,15 @@
 
 ### Meeting minutes
 
+
+# 24 February (Monday), 3pm-5pm
+1. Discussion about dataset downloaded
+      - use this dataset to train the model
+      - use about half of the dataset, i.e. 7-8 million rows
+      - use location_group column as basis for parking lot id
+
+
 # 19 February (Wednesday), 3pm-5pm
-
-
 1. Discussed the db schema
       - added column (prediction_description) to ai_predictions
 
@@ -11,9 +17,6 @@
    Python package to transform data into latitude/longitude
 
 3. Data generation algorithm - provided by Hengpan
-
-
-
 
 
 # 17 February (Monday), 3pm-4pm
