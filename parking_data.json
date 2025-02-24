@@ -1,0 +1,122 @@
+[
+    {
+        "name": "Westfield Albany",
+        "latitude": -36.7261,
+        "longitude": 174.7094,
+        "available_spaces": 2373,
+        "total_spaces": 3000,
+        "price_per_hour": "Free",
+        "open_hours": "24 Hours"
+    },
+    {
+        "name": "Albany Mega Centre",
+        "latitude": -36.7254,
+        "longitude": 174.7053,
+        "available_spaces": 1300,
+        "total_spaces": 1500,
+        "price_per_hour": "$2.00",
+        "open_hours": "07:00 - 22:00"
+    },
+	
+	
+	
+	 {
+        "name": "Parking Lot A-1",
+        "latitude": -36.853821,
+        "longitude": 174.761353,
+        "available_spaces": 50,
+        "total_spaces": 100,
+        "price_per_hour": "Free",
+        "open_hours": "24 Hours"
+    },
+    {
+        "name": "Parking Lot B-1",
+        "latitude": -36.857677,
+        "longitude": 174.761276,
+        "available_spaces": 30,
+        "total_spaces": 180,
+        "price_per_hour": "$2.00",
+        "open_hours": "07:00 - 22:00"
+    },
+    {
+        "name": "Parking Lot C-1",
+        "latitude": -36.849411,
+        "longitude": 174.763992,
+        "available_spaces": 60,
+        "total_spaces": 120,
+        "price_per_hour": "$2.50",
+        "open_hours": "06:00 - 23:00"
+    },
+    {
+        "name": "Parking Lot D-1",
+        "latitude": -36.856894,
+        "longitude": 174.764957,
+        "available_spaces": 45,
+        "total_spaces": 100,
+        "price_per_hour": "$3.00",
+        "open_hours": "06:30 - 22:30"
+    },
+    {
+        "name": "Parking Lot E-1",
+        "latitude": -36.858384,
+        "longitude": 174.761310,
+        "available_spaces": 65,
+        "total_spaces": 120,
+        "price_per_hour": "$2.00",
+        "open_hours": "07:00 - 21:00"
+    },
+    {
+        "name": "Parking Lot A-2",
+        "latitude": -37.022059,
+        "longitude": 174.894508,
+        "available_spaces": 55,
+        "total_spaces": 150,
+        "price_per_hour": "Free",
+        "open_hours": "24 Hours"
+    },
+    {
+        "name": "Parking Lot B-2",
+        "latitude": -37.022463,
+        "longitude": 174.897194,
+        "available_spaces": 40,
+        "total_spaces": 110,
+        "price_per_hour": "$1.50",
+        "open_hours": "07:00 - 20:00"
+    },
+    {
+        "name": "Parking Lot C-2",
+        "latitude": -36.790009,
+        "longitude": 174.770416,
+        "available_spaces": 45,
+        "total_spaces": 100,
+        "price_per_hour": "$2.00",
+        "open_hours": "06:00 - 22:00"
+    },
+    {
+        "name": "Parking Lot D-2",
+        "latitude": -36.787511,
+        "longitude": 174.774059,
+        "available_spaces": 50,
+        "total_spaces": 120,
+        "price_per_hour": "$2.50",
+        "open_hours": "06:30 - 23:00"
+    },
+    {
+        "name": "Parking Lot E-2",
+        "latitude": -36.986616,
+        "longitude": 174.784337,
+        "available_spaces": 50,
+        "total_spaces": 120,
+        "price_per_hour": "$3.00",
+        "open_hours": "07:00 - 21:30"
+    },
+    {
+        "name": "Parking Lot A-3",
+        "latitude": -36.991588,
+        "longitude": 174.878486,
+        "available_spaces": 50,
+        "total_spaces": 120,
+        "price_per_hour": "$2.00",
+        "open_hours": "07:00 - 22:00"
+    }
+]
