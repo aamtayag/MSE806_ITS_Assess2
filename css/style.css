@@ -1,0 +1,22 @@
+body {
+    display: flex;
+}
+
+#map {
+    height: 100vh;
+    width: 75%;
+}
+
+#parking-list {
+    width: 25%;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f7f7f7;
+    border-left: 2px solid #ddd;
+}
+
+.parking-item {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
