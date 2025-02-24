@@ -76,5 +76,34 @@ function updateParkingList() {
     });
 }
 
+// Navigate to the parking lot
+function navigateToParking(lat, lng) {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+
+            // Navigate with Google Maps
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${lat},${lng}&travelmode=driving`;
+            window.open(url, "_blank");
+        }, error => {
+            console.error("Unable to obtain the user location, use the default starting point:", error);
+
+            // Alternative plan：If you cannot get the current location, navigate directly to the destination
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+            window.open(url, "_blank");
+        });
+    } else {
+        console.error("The browser does not support geolocation, and directly navigate to the destination");
+
+        // Alternative plan
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+        window.open(url, "_blank");
+    }
+}
+
+
+
 // Let the Google Maps API recognize initMap
 window.loadParkingData = loadParkingData;
+window.navigateToParking = navigateToParking;
