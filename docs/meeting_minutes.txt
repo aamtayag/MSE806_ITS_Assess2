@@ -8,6 +8,13 @@
       - use about half of the dataset, i.e. 7-8 million rows
       - use location_group column as basis for parking lot id
 
+2. Change the meeting recurrence from Mon, Tue, Wed 3pm
+
+3. Work assignments:
+      Wen - to work on the data capture engine
+      Aries - to work on the recommendation engine
+      Hengpan - to work on the analytics/prediction engine
+
 
 # 19 February (Wednesday), 3pm-5pm
 1. Discussed the db schema
