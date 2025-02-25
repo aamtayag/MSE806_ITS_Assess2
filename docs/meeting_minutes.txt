@@ -16,7 +16,6 @@
       Hengpan - to work on the analytics/prediction engine
 
 
-
 # 19 February (Wednesday), 3pm-5pm
 1. Discussed the db schema
       - added column (prediction_description) to ai_predictions
