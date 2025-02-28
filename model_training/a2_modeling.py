@@ -41,11 +41,29 @@ g_training_epochs = 100
 
 g_random_state = 100
 
+
+def init_log():
+    LOG_FORMAT = "%(filename)s:%(lineno)d:%(funcName)s()  %(message)s"
+    DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT,)
+
+init_log()
+
+
+
+def get_runtime_path():
+    s = os.getcwd()
+    dir = s.split('/')[-1]
+    if dir == 'model_training':
+        return './'
+    else:
+        return './model_training/'
+        pass
 #model file name config
-g_filename_lstm_weekdays = f'./modeldir/lstm_model_weekdays_fwd{g_lstm_predict_step}.keras'
-g_filename_lstm_weekends = f'./modeldir/lstm_model_weekends_fwd{g_lstm_predict_step}.keras'
-g_filename_dnn_weekend = f'./modeldir/dnn_model_weekends_fwd{g_dnn_predict_step}.keras'
-g_filename_dnn_weekdays = f'./modeldir/dnn_model_weekdays_fwd{g_dnn_predict_step}.keras'
+g_filename_lstm_weekdays = f'{get_runtime_path()}modeldir/lstm_model_weekdays_fwd{g_lstm_predict_step}.keras'
+g_filename_lstm_weekends = f'{get_runtime_path()}modeldir/lstm_model_weekends_fwd{g_lstm_predict_step}.keras'
+g_filename_dnn_weekend = f'{get_runtime_path()}modeldir/dnn_model_weekends_fwd{g_dnn_predict_step}.keras'
+g_filename_dnn_weekdays = f'{get_runtime_path()}modeldir/dnn_model_weekdays_fwd{g_dnn_predict_step}.keras'
 
 
 #model type name
@@ -60,12 +78,8 @@ g_model_type_dnn_weekends = 'dnn_weekends'
 
 
 
-def init_log():
-    LOG_FORMAT = "%(filename)s:%(lineno)d:%(funcName)s()  %(message)s"
-    DATE_FORMAT = "%m/%d/%Y %H:%M:%S %p"
-    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT,)
 
-init_log()
+
 
 # Function to apply pd.to_datetime on a chunk
 def apply_to_datetime(chunk):
@@ -532,12 +546,18 @@ def test_predict():
 
     pass
 
+
+
+
 if __name__=='__main__':
     logging.info('a2_modeling.py')
     #model_lstm_analysis()
     #model_dnn_analysis()
 
-    test_predict()
+    #test_predict()
+
+
+
 
 
 
