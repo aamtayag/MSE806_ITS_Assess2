@@ -3,26 +3,59 @@
 
 <head>
   <meta charset="UTF-8">
+  <title>Smart Parking System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart parking system</title>
+  <!-- 引入你的 CSS 样式 -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-
   <div id="map"></div>
+
   <div id="parking-list">
-    <h3>The nearest parking lot</h3>
+    <h3>The Nearest Parking Lot</h3>
     <ul id="parking-items"></ul>
   </div>
 
+  <button id="toggle-panel">◀</button>
+
+  <div id="floating-panel">
+    <h3>Set Your Location</h3>
+
+    <label for="address-input">Enter Address:</label>
+    <input type="text" id="address-input" placeholder="Enter address" autocomplete="off">
+
+    <button id="current-location-btn">Get Current Location</button>
+    <p id="current-location-text"><strong>Current Location:</strong> Not Set</p>
+
+    <button id="search-btn">Search</button>
+  </div>
+
+
   <script>
-    const DEBUG_MODE = false;
+    const DEBUG_MODE = true;
   </script>
 
-
-  <script src="js/map.js" defer></script>
+  <script src="js/secretKey.js"></script>
   <script src="js/parking.js" defer></script>
+  <script src="js/map.js" defer></script>
+
+  <!-- Google Maps JS-->
+  <script async defer>
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+    document.head.appendChild(script);
+  </script>
+
+  <!-- Show/hide the right panel function -->
+  <script>
+    document.getElementById("toggle-panel").addEventListener("click", function () {
+      let panel = document.getElementById("floating-panel");
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+      this.innerText = panel.style.display === "none" ? "▶" : "◀";
+    });
+  </script>
+
 </body>
 
 </html>
