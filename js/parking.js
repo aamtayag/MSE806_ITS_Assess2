@@ -1,7 +1,7 @@
 // parking.js
-
 // Global array to store all parking lot data loaded from JSON or an API
 let parkingData = [];
+let parkingMarkers = [];
 
 /**
  * Calculates the distance (in km) between two latitude-longitude points
@@ -25,6 +25,14 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
+// Clean old markers before loading new ones
+function cleanMarkersAndData() {
+    parkingMarkers.forEach(marker => marker.setMap(null));
+    parkingMarkers = [];
+    parkingData = [];
+}
+
+
 /**
  * Loads parking data from either a local JSON (if DEBUG_MODE is true)
  * or from an API endpoint (if DEBUG_MODE is false).
@@ -34,17 +42,23 @@ function getDistance(lat1, lon1, lat2, lon2) {
  *   - map (the Google Map object)
  *   - DEBUG_MODE (to decide data source)
  */
-function loadParkingData() {
-    console.log("DEBUG_MODE:", DEBUG_MODE);
 
-    const dataSource = DEBUG_MODE ? "json/parking_data.json" : "/api/get-parking-data";
+function loadParkingData() {
     console.log("Current location in parking.js:", currentLocation);
 
-    fetch(dataSource)
+    cleanMarkersAndData();
+
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/recommend?lat=${currentLocation.lat}&lng=${currentLocation.lng}`)
         .then(response => response.json())
         .then(data => {
             // Compute the distance from the user's currentLocation to each parking lot
-            parkingData = data.map(lot => ({
+            const allLots = data.all_lots;
+            if (!Array.isArray(allLots)) {
+                throw new Error("No 'all_lots' array found in response");
+            }
+
+
+            parkingData = allLots.map(lot => ({
                 ...lot,
                 distance: getDistance(
                     currentLocation.lat,
@@ -113,6 +127,7 @@ function updateParkingList() {
       Price: ${lot.price_per_hour}<br>
       <button onclick="viewParking(${index})">View</button>
       <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
+      <button onclick="predictedParkingSpaces(${lot.latitude}, ${lot.longitude})">Predition</button>
     `;
         parkingList.appendChild(item);
     });
@@ -129,9 +144,9 @@ function navigateToParking(lat, lng) {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             position => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-
+                const userLat = currentLocation.lat;
+                const userLng = currentLocation.lng;
+                console.log("User's current location:", userLat, userLng);
                 const url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${lat},${lng}&travelmode=driving`;
                 window.open(url, "_blank");
             },
@@ -149,6 +164,14 @@ function navigateToParking(lat, lng) {
         window.open(url, "_blank");
     }
 }
+
+function predictedParkingSpaces(lat, lng) {
+    console.log("Predicting parking spaces for:", lat, lng);
+    // Implement your prediction logic here
+    // For example, you can call a prediction API or use a machine learning model
+    // to estimate the number of available parking spaces at a given location.
+}
+
 
 // Keep track of the currently opened InfoWindow so we can close it when viewing another one
 let currentInfoWindow = null;
@@ -179,4 +202,5 @@ function viewParking(index) {
 // Expose functions to the global scope if needed
 window.loadParkingData = loadParkingData;
 window.navigateToParking = navigateToParking;
+window.predictedParkingSpaces = predictedParkingSpaces;
 window.viewParking = viewParking;
