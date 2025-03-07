@@ -1,72 +1,201 @@
-const API_KEY = "AIzaSyD2r8GYegCiPsXwkk-fxELUhpr4gUgb1Dk";  // Here we will use .env method to save it later
-
 const DEFAULT_LAT = -36.7261;
 const DEFAULT_LNG = 174.7094;
 
-// Initialize Google Maps
-let map, userLat, userLng, userMarker;
+let map;
+let userMarker;
+
+// Store the user's current location (lat, lng, address)
+let currentLocation = {
+    lat: null,
+    lng: null,
+    address: ""
+};
+
+window.currentLocation = {
+    lat: DEFAULT_LAT,
+    lng: DEFAULT_LNG,
+    address: ""
+};
 
 
+
+// ========== Google Map Initialization ==========
 window.initMap = function () {
-    if (DEBUG_MODE) {
-        console.log("DEBUG_MODE: Using location.json for user location");
+    // If you need to restore a previously saved currentLocation from localStorage
+    loadCurrentLocationFromStorage();
 
+    if (DEBUG_MODE) {
+        // DEBUG MODE: get a test location from a local JSON file
         fetch("json/location.json")
             .then(response => response.json())
-            .then(locationData => {
-                userLat = locationData.latitude;
-                userLng = locationData.longitude;
-                initializeMap(userLat, userLng);
-            })
-            .catch(error => {
-                console.error("Failed to load location.json, using default coordinates:", error);
-                initializeMap(DEFAULT_LAT, DEFAULT_LNG);
-            });
-
+            .then(({ latitude, longitude }) => initializeMap(latitude, longitude))
+            .catch(() => initializeMap(DEFAULT_LAT, DEFAULT_LNG));
     } else {
-        console.log("DEBUG_MODE: Using real GPS location");
-
+        // Normal mode: use the browser's geolocation
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                userLat = position.coords.latitude;
-                userLng = position.coords.longitude;
-                initializeMap(userLat, userLng);
-            }, error => {
-                console.error("Failed to get GPS location, using default coordinates:", error);
-                initializeMap(DEFAULT_LAT, DEFAULT_LNG);
-            });
+            navigator.geolocation.getCurrentPosition(
+                ({ coords }) => initializeMap(coords.latitude, coords.longitude),
+                () => initializeMap(DEFAULT_LAT, DEFAULT_LNG)
+            );
         } else {
-            console.error("Geolocation not supported, using default coordinates.");
             initializeMap(DEFAULT_LAT, DEFAULT_LNG);
         }
     }
 };
 
-// Unified methods of initializing maps to reduce duplicate code
-function initializeMap(lat, lng) {
-    userLat = lat;
-    userLng = lng;
-
+async function initializeMap(lat, lng) {
     map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: userLat, lng: userLng },
+        center: { lat, lng },
         zoom: 14
     });
 
     userMarker = new google.maps.Marker({
-        position: { lat: userLat, lng: userLng },
+        position: { lat, lng },
         map: map,
         icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
         title: "Your Location"
     });
 
+    // Initialize address autocomplete
+    initAutocomplete();
+
+    // Set and fetch the address for the current location
+    await setCurrentLocation(lat, lng);
+
+    // Update the UI text with the address
+    updateCurrentLocationText();
+
+    // Save the location (optional)
+    saveUserLocation(lat, lng);
+
+    // Load parking data (from parking.js or elsewhere)
     loadParkingData();
 }
 
+// ========== Address Autocomplete Setup ==========
+function initAutocomplete() {
+    const input = document.getElementById("address-input");
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: "nz" },
+    });
 
-// Dynamic loading of Google Maps API
-const script = document.createElement("script");
-script.src = "https://maps.googleapis.com/maps/api/js?key=" + API_KEY + "&libraries=places&callback=initMap";
-script.async = true;
-script.defer = true;
-document.head.appendChild(script);
+    autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+            const { lat, lng } = place.geometry.location;
+            setUserLocation(lat(), lng());
+        }
+    });
+}
 
+// ========== Set User Location and Save ==========
+
+/**
+ * Updates map center/marker and fetches address information.
+ */
+async function setUserLocation(lat, lng) {
+    map.setCenter({ lat, lng });
+    map.setZoom(14);
+
+    if (userMarker) {
+        userMarker.setPosition({ lat, lng });
+    } else {
+        userMarker = new google.maps.Marker({
+            position: { lat, lng },
+            map: map,
+            icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            title: "Your Location"
+        });
+    }
+
+    // Fetch address and update currentLocation
+    await setCurrentLocation(lat, lng);
+
+    // Update the UI text with the address
+    updateCurrentLocationText();
+
+    // Save location details
+    saveUserLocation(lat, lng);
+
+    // Reload parking data, if needed
+    loadParkingData();
+}
+
+/**
+ * Fetches the address from Google Geocoding and updates currentLocation.
+ */
+async function setCurrentLocation(lat, lng) {
+    try {
+        const address = await getAddressFromLatLng(lat, lng);
+        currentLocation.lat = lat;
+        currentLocation.lng = lng;
+        currentLocation.address = address;
+    } catch (error) {
+        console.error("Failed to get address:", error);
+        currentLocation.lat = lat;
+        currentLocation.lng = lng;
+        currentLocation.address = "";
+    }
+}
+
+// ========== Update the UI with the current address ==========
+function updateCurrentLocationText() {
+    const locationTextElem = document.getElementById("current-location-text");
+    locationTextElem.innerHTML = `<strong>Current Location:</strong> 📍 ${currentLocation.address}`;
+}
+
+// ========== Get address by lat/lng (reverse geocoding) ==========
+function getAddressFromLatLng(lat, lng) {
+    return new Promise((resolve, reject) => {
+        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results[0]) {
+                    resolve(data.results[0].formatted_address);
+                } else {
+                    resolve(`Lat: ${lat}, Lng: ${lng}`);
+                }
+            })
+            .catch(err => reject(err));
+    });
+}
+
+// ========== Save the current location to localStorage ==========
+async function saveUserLocation(lat, lng) {
+    try {
+        const address = await getAddressFromLatLng(lat, lng);
+
+        currentLocation.lat = lat;
+        currentLocation.lng = lng;
+        currentLocation.address = address;
+
+        localStorage.setItem("currentLocation", JSON.stringify(currentLocation));
+    } catch (error) {
+        console.error("There was an error saving the address:", error);
+    }
+}
+
+// ========== Load current location from localStorage ==========
+function loadCurrentLocationFromStorage() {
+    const data = localStorage.getItem("currentLocation");
+    if (data) {
+        currentLocation = JSON.parse(data);
+    }
+}
+
+// ========== Event Listeners ==========
+
+document.getElementById("search-btn").addEventListener("click", () => {
+    loadParkingData();
+});
+
+document.getElementById("current-location-btn").addEventListener("click", () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            ({ coords }) => setUserLocation(coords.latitude, coords.longitude),
+            () => alert("Failed to retrieve location. Please check your browser settings.")
+        );
+    } else {
+        alert("Geolocation is not supported by your browser.");
+    }
+});
