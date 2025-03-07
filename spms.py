@@ -58,9 +58,11 @@ def recommend_parking(conn, user_lat, user_lon):
     for lot in lots:
         lot_id, name, lat, lon, total, available = lot
         distance = haversine(user_lat, user_lon, lat, lon)
-        congestion_factor = (total - available) / total if total > 0 else 1
+        congestion_factor = (total - available) / total if total > 0 else 1         # original
+        # congestion_factor = (total - available) / total if total > 0 else 0         # modified this from 1 to 0
         score = distance * congestion_factor
         print(f"Lot {name} (ID: {lot_id}) -> Distance: {distance:.2f} km, Congestion Factor: {congestion_factor:.2f}, Score: {score:.2f}")
+        # if score > 0:                                                               # added this IF statement
         if best_score is None or score < best_score:
             best_score = score
             best_lot = lot
