@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Parking Lot Management</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="css/manager.css">
+</head>
+
+<body class="p-4">
+    <div class="container">
+        <h1>Parking Lot Management</h1>
+        <hr>
+        <h2>All Parking Lots</h2>
+        <div class="mb-3">
+            <button id="open-create-modal" class="btn btn-primary me-2">Create New Parking Lot</button>
+            <button id="refresh-btn" class="btn btn-secondary">Refresh</button>
+        </div>
+        <table id="parking-lots-table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Lot_id</th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Total Spaces</th>
+                    <th>Available Spaces</th>
+                    <th>Created At</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 由 JS 动态生成 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Create Modal -->
+    <div class="modal fade" id="create-modal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createModalLabel">Create New Parking Lot</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-form">
+                        <div class="mb-3">
+                            <label for="create-name" class="form-label">Name:</label>
+                            <input type="text" class="form-control" id="create-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-address" class="form-label">Address:</label>
+                            <input type="text" class="form-control" id="create-address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-lat" class="form-label">Latitude:</label>
+                            <input type="number" step="any" class="form-control" id="create-lat" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-lng" class="form-label">Longitude:</label>
+                            <input type="number" step="any" class="form-control" id="create-lng" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-total" class="form-label">Total Spaces:</label>
+                            <input type="number" class="form-control" id="create-total" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create-available" class="form-label">Available Spaces:</label>
+                            <input type="number" class="form-control" id="create-available" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Modal -->
+    <div class="modal fade" id="update-modal" tabindex="-1" aria-labelledby="updateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateModalLabel">Update Parking Lot</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="update-form">
+                        <input type="hidden" id="update-id">
+                        <div class="mb-3">
+                            <label for="update-name" class="form-label">Name:</label>
+                            <input type="text" class="form-control" id="update-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-address" class="form-label">Address:</label>
+                            <input type="text" class="form-control" id="update-address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-lat" class="form-label">Latitude:</label>
+                            <input type="number" step="any" class="form-control" id="update-lat" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-lng" class="form-label">Longitude:</label>
+                            <input type="number" step="any" class="form-control" id="update-lng" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-total" class="form-label">Total Spaces:</label>
+                            <input type="number" class="form-control" id="update-total" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-available" class="form-label">Available Spaces:</label>
+                            <input type="number" class="form-control" id="update-available" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入配置和业务逻辑脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/manager.js"></script>
+    <!-- 引入 Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

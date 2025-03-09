@@ -1,17 +1,13 @@
 import os
 import socket
 import ssl
-import threading
 import webbrowser
-import math
 import json
-import sqlite3
-from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_from_directory
 from threading import Timer
+import service
 
 from service import (
-    get_real_time_status,
     recommend_parking,
     predict_congestion,
 )
@@ -24,6 +20,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CERT_DIR = os.path.join(BASE_DIR, "cert")
 CERT_FILE = os.path.join(CERT_DIR, "cert.pem")
 KEY_FILE = os.path.join(CERT_DIR, "key.pem")
+
+DEFAULT_DISTANCE_SET = {1.0, 3.0, 5.0}
+DEFAULT_DISTANCE = 3.0
 
 # Create a Flask application, using the current directory as a static file directory
 app = Flask(__name__, static_folder=".", static_url_path="")
@@ -75,10 +74,13 @@ def api_recommend():
     try:
         lat = float(request.args["lat"])
         lng = float(request.args["lng"])
+        distance = float(request.args.get("distance", DEFAULT_DISTANCE))
+        if distance not in DEFAULT_DISTANCE_SET:
+            distance = DEFAULT_DISTANCE
     except (KeyError, ValueError):
         return jsonify({"error": "Missing or invalid lat/lng"}), 400
 
-    result = recommend_parking(lat, lng)
+    result = recommend_parking(lat, lng, distance)
     return jsonify(result)
 
 
@@ -95,6 +97,122 @@ def api_predict():
 
     result = predict_congestion(hour_offset)
     return jsonify(result)
+
+
+@app.route("/parking_lot", methods=["POST"])
+def create_lot():
+    """
+    Create a new parking record：
+    {
+        "name": "Parking A",
+        "address": "XX street",
+        "latitude": 39.90,
+        "longitude": 116.40,
+        "total_spaces": 100,
+        "available_spaces": 80
+    }
+    """
+    data = request.json
+    name = data.get("name")
+    address = data.get("address")
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+    total_spaces = data.get("total_spaces")
+    available_spaces = data.get("available_spaces")
+
+    lot_id = service.create_parking_lot(
+        name, address, latitude, longitude, total_spaces, available_spaces
+    )
+    return jsonify({"message": "Parking lot created", "lot_id": lot_id}), 201
+
+
+@app.route("/parking_lot/<int:lot_id>", methods=["GET"])
+def get_lot(lot_id):
+    """get single record by lot_id"""
+    row = service.get_parking_lot(lot_id)
+    if row:
+        # (lot_id, name, address, latitude, longitude, total_spaces, available_spaces, created_at, updated_at)
+        return jsonify(
+            {
+                "lot_id": row[0],
+                "name": row[1],
+                "address": row[2],
+                "latitude": row[3],
+                "longitude": row[4],
+                "total_spaces": row[5],
+                "available_spaces": row[6],
+                "created_at": row[7],
+                "updated_at": row[8],
+            }
+        )
+    else:
+        return jsonify({"message": "Parking lot not found"}), 404
+
+
+@app.route("/parking_lots", methods=["GET"])
+def get_all_lots():
+    """All parking lots"""
+    rows = service.get_all_parking_lots()
+
+    result = []
+    for row in rows:
+        result.append(
+            {
+                "lot_id": row[0],
+                "name": row[1],
+                "address": row[2],
+                "latitude": row[3],
+                "longitude": row[4],
+                "total_spaces": row[5],
+                "available_spaces": row[6],
+                "created_at": row[7],
+                "updated_at": row[8],
+            }
+        )
+    return jsonify(result)
+
+
+@app.route("/parking_lot/<int:lot_id>", methods=["PUT"])
+def update_lot(lot_id):
+    """
+    Update a parking record by lot_id
+    {
+        "name": "Parking B",
+        "address": "new street",
+        "latitude": 39.91,
+        "longitude": 116.41,
+        "total_spaces": 200,
+        "available_spaces": 150
+    }
+    """
+    data = request.json
+    name = data.get("name")
+    address = data.get("address")
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+    total_spaces = data.get("total_spaces")
+    available_spaces = data.get("available_spaces")
+
+    # check if the record exists
+    row = service.get_parking_lot(lot_id)
+    if not row:
+        return jsonify({"message": "Parking lot not found"}), 404
+
+    service.update_parking_lot(
+        lot_id, name, address, latitude, longitude, total_spaces, available_spaces
+    )
+    return jsonify({"message": "Parking lot updated"}), 200
+
+
+@app.route("/parking_lot/<int:lot_id>", methods=["DELETE"])
+def delete_lot(lot_id):
+    """delete a parking record by lot_id"""
+    row = service.get_parking_lot(lot_id)
+    if not row:
+        return jsonify({"message": "Parking lot not found"}), 404
+
+    service.delete_parking_lot(lot_id)
+    return jsonify({"message": "Parking lot deleted"}), 200
 
 
 # -------------------------------

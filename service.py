@@ -8,7 +8,7 @@ DB_PATH = "SmartParking.db"
 
 
 def connect_db():
-    """连Connect to the database and return the conn object. Context management is also available"""
+    """Connect to the database and return the conn object. Context management is also available"""
     return sqlite3.connect(DB_PATH)
 
 
@@ -63,7 +63,7 @@ def get_real_time_status():
     return results
 
 
-def recommend_parking(user_lat, user_lon):
+def recommend_parking(user_lat, user_lon, filter_distance=3):
     """
     Calculate based on user coordinates + parking lot congestion rate
     score=distance*congestion_factor,
@@ -89,7 +89,8 @@ def recommend_parking(user_lat, user_lon):
         distance = haversine(user_lat, user_lon, lat, lon)
         congestion_factor = (total - available) / total if total > 0 else 1
         score = distance * congestion_factor
-
+        if distance > filter_distance:
+            continue
         lot_info = {
             "lot_id": lot_id,
             "name": name,
@@ -113,7 +114,7 @@ def recommend_parking(user_lat, user_lon):
 def predict_congestion(hour_offset):
     """
     Predict the parking lot occupancy after a specified hour (from the ai_predictions table)
-    返回:
+
     {
       "time_range": "xxxx ~ xxxx",
       "predictions": [ {...}, {...} ]
@@ -153,3 +154,87 @@ def predict_congestion(hour_offset):
         )
 
     return {"time_range": f"{start_str} ~ {end_str}", "predictions": results}
+
+
+def create_parking_lot(
+    name, address, latitude, longitude, total_spaces, available_spaces
+):
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    insert_sql = """
+    INSERT INTO parkinglots 
+    (name, address, latitude, longitude, total_spaces, available_spaces) 
+    VALUES (?, ?, ?, ?, ?, ?)
+    """
+    cursor.execute(
+        insert_sql, (name, address, latitude, longitude, total_spaces, available_spaces)
+    )
+
+    conn.commit()
+    conn.close()
+    return cursor.lastrowid
+
+
+def get_parking_lot(lot_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    select_sql = "SELECT * FROM parkinglots WHERE lot_id = ?"
+    cursor.execute(select_sql, (lot_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row
+
+
+def get_all_parking_lots():
+    conn = connect_db()
+    cursor = conn.cursor()
+    select_sql = "SELECT * FROM parkinglots"
+    cursor.execute(select_sql)
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def update_parking_lot(
+    lot_id, name, address, latitude, longitude, total_spaces, available_spaces
+):
+    conn = connect_db()
+    cursor = conn.cursor()
+    update_sql = """
+    UPDATE parkinglots
+    SET name = ?,
+        address = ?,
+        latitude = ?,
+        longitude = ?,
+        total_spaces = ?,
+        available_spaces = ?,
+        updated_at = ?
+    WHERE lot_id = ?
+    """
+
+    updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute(
+        update_sql,
+        (
+            name,
+            address,
+            latitude,
+            longitude,
+            total_spaces,
+            available_spaces,
+            updated_at,
+            lot_id,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_parking_lot(lot_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    delete_sql = "DELETE FROM parkinglots WHERE lot_id = ?"
+    cursor.execute(delete_sql, (lot_id,))
+    conn.commit()
+    conn.close()

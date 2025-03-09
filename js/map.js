@@ -3,6 +3,7 @@ const DEFAULT_LNG = 174.7094;
 
 let map;
 let userMarker;
+let currentInfoWindow;
 
 // Store the user's current location (lat, lng, address)
 let currentLocation = {
@@ -55,6 +56,8 @@ async function initializeMap(lat, lng) {
         icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
         title: "Your Location"
     });
+    // init compoments 
+    currentInfoWindow = new google.maps.InfoWindow();
 
     // Initialize address autocomplete
     initAutocomplete();

@@ -3,6 +3,7 @@
 let parkingData = [];
 let parkingMarkers = [];
 
+
 /**
  * Calculates the distance (in km) between two latitude-longitude points
  * on Earth using the Haversine formula.
@@ -32,6 +33,12 @@ function cleanMarkersAndData() {
     parkingData = [];
 }
 
+// Get the value of the distance selection box
+function getSelectedDistance() {
+    const distanceSelect = document.getElementById("distance-select");
+    return distanceSelect.value;
+}
+
 
 /**
  * Loads parking data from either a local JSON (if DEBUG_MODE is true)
@@ -48,7 +55,7 @@ function loadParkingData() {
 
     cleanMarkersAndData();
 
-    fetch(`${window.API_CONFIG.API_BASE_URL}/api/recommend?lat=${currentLocation.lat}&lng=${currentLocation.lng}`)
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/recommend?lat=${currentLocation.lat}&lng=${currentLocation.lng}&distance=${getSelectedDistance()}`)
         .then(response => response.json())
         .then(data => {
             // Compute the distance from the user's currentLocation to each parking lot
@@ -79,22 +86,16 @@ function loadParkingData() {
                     title: lot.name
                 });
 
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `
-            <h3>${lot.name}</h3>
-            <p>Available: ${lot.available_spaces} / ${lot.total_spaces}</p>
-            <p>Price: ${lot.price_per_hour}</p>
-            <p>Distance: ${lot.distance.toFixed(2)} km</p>
-            <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
-          `
-                });
-
                 marker.addListener("click", () => {
-                    infoWindow.open(map, marker);
+                    if (currentInfoWindow) {
+                        currentInfoWindow.close();
+                    }
+                    setInfoWindow(lot);
+                    currentInfoWindow.open(map, marker);
                 });
 
                 lot.marker = marker;
-                lot.infoWindow = infoWindow;
+                // 
             });
 
             // Update the list in the side panel
@@ -104,6 +105,17 @@ function loadParkingData() {
             console.error("Failed to load parking data:", error);
         });
 }
+
+function setInfoWindow(lot) {
+    currentInfoWindow.setContent(`
+        <h3>${lot.name}</h3>
+        <p>Available: ${lot.available_spaces} / ${lot.total_spaces}</p>
+        <p>Price: ${lot.price_per_hour}</p>
+        <p>Distance: ${lot.distance.toFixed(2)} km</p>
+        <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
+    `);
+}
+
 
 /**
  * Updates the DOM list (e.g., <ul id="parking-items">) with the current sorted parkingData.
@@ -173,9 +185,6 @@ function predictedParkingSpaces(lat, lng) {
 }
 
 
-// Keep track of the currently opened InfoWindow so we can close it when viewing another one
-let currentInfoWindow = null;
-
 /**
  * Focus the map on a specific parking lot, open its InfoWindow,
  * and close any previously opened InfoWindow.
@@ -184,6 +193,8 @@ let currentInfoWindow = null;
 function viewParking(index) {
     const lot = parkingData[index];
     console.log(`Focusing on parking lot: ${lot.name}`);
+
+    console.log(`infoWindow: ${lot.infoWindow}`);
 
     // Close the previously opened info window if any
     if (currentInfoWindow) {
@@ -195,8 +206,8 @@ function viewParking(index) {
     map.setZoom(16);
 
     // Open its InfoWindow
-    lot.infoWindow.open(map, lot.marker);
-    currentInfoWindow = lot.infoWindow;
+    setInfoWindow(lot);
+    currentInfoWindow.open(map, lot.marker);
 }
 
 // Expose functions to the global scope if needed
