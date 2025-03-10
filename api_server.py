@@ -21,7 +21,7 @@ CERT_DIR = os.path.join(BASE_DIR, "cert")
 CERT_FILE = os.path.join(CERT_DIR, "cert.pem")
 KEY_FILE = os.path.join(CERT_DIR, "key.pem")
 
-DEFAULT_DISTANCE_SET = {1.0, 3.0, 5.0}
+DEFAULT_DISTANCE_SET = {0.5, 1.0, 3.0, 5.0}
 DEFAULT_DISTANCE = 3.0
 
 # Create a Flask application, using the current directory as a static file directory
@@ -213,6 +213,61 @@ def delete_lot(lot_id):
 
     service.delete_parking_lot(lot_id)
     return jsonify({"message": "Parking lot deleted"}), 200
+
+
+@app.route("/predictions", methods=["GET"])
+def get_all_predictions():
+    predictions = service.get_all_predictions()
+    return jsonify(predictions)
+
+
+@app.route("/prediction/<int:prediction_id>", methods=["GET"])
+def get_prediction(prediction_id):
+    prediction = service.get_prediction(prediction_id)
+    if prediction:
+        return jsonify(prediction)
+    else:
+        return jsonify({"message": "Prediction not found"}), 404
+
+
+@app.route("/prediction", methods=["POST"])
+def create_prediction():
+    data = request.json
+    prediction_id = service.create_prediction(
+        data["lot_id"],
+        data["prediction_time"],
+        data.get("predicted_occupied_spaces"),
+        data.get("predicted_available_spaces"),
+        data.get("predicted_occupancy_rate"),
+        data.get("confidence_score"),
+        data.get("model_version"),
+    )
+    return (
+        jsonify({"message": "Prediction created", "prediction_id": prediction_id}),
+        201,
+    )
+
+
+@app.route("/prediction/<int:prediction_id>", methods=["PUT"])
+def update_prediction(prediction_id):
+    data = request.json
+    service.update_prediction(
+        prediction_id,
+        data["lot_id"],
+        data["prediction_time"],
+        data.get("predicted_occupied_spaces"),
+        data.get("predicted_available_spaces"),
+        data.get("predicted_occupancy_rate"),
+        data.get("confidence_score"),
+        data.get("model_version"),
+    )
+    return jsonify({"message": "Prediction updated"})
+
+
+@app.route("/prediction/<int:prediction_id>", methods=["DELETE"])
+def delete_prediction(prediction_id):
+    service.delete_prediction(prediction_id)
+    return jsonify({"message": "Prediction deleted"})
 
 
 # -------------------------------

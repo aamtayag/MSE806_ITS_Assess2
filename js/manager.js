@@ -1,148 +1,151 @@
-
 const baseURL = window.API_CONFIG.API_BASE_URL;
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded');
 
-    const createModalEl = document.getElementById('create-modal');
-    const createModal = new bootstrap.Modal(createModalEl, { keyboard: true });
+    // init
+    const modalCreateParkingLot = new bootstrap.Modal(document.getElementById('modal-create-parkinglot'), { keyboard: true });
+    const modalUpdateParkingLot = new bootstrap.Modal(document.getElementById('modal-update-parkinglot'), { keyboard: true });
+    const modalCreatePrediction = new bootstrap.Modal(document.getElementById('modal-create-prediction'), { keyboard: true });
+    const modalUpdatePrediction = new bootstrap.Modal(document.getElementById('modal-update-prediction'), { keyboard: true });
 
-    const updateModalEl = document.getElementById('update-modal');
-    const updateModal = new bootstrap.Modal(updateModalEl, { keyboard: true });
-
-    // Bind to open the create pop-up button
-    document.getElementById('open-create-modal').addEventListener('click', function () {
-        createModal.show();
+    // bind Parking Lot Related Events
+    document.getElementById('btn-create-parkinglot').addEventListener('click', () => {
+        document.getElementById('form-create-parkinglot').reset();
+        modalCreateParkingLot.show();
     });
-
-    // Binding create form submission event
-    document.getElementById('create-form').addEventListener('submit', function (e) {
+    document.getElementById('btn-refresh-parkinglots').addEventListener('click', () => {
+        fetchAllParkingLots();
+    });
+    document.getElementById('form-create-parkinglot').addEventListener('submit', (e) => {
         e.preventDefault();
         createParkingLot();
     });
-
-    // Binding update form submission event
-    document.getElementById('update-form').addEventListener('submit', function (e) {
+    document.getElementById('form-update-parkinglot').addEventListener('submit', (e) => {
         e.preventDefault();
         updateParkingLot();
     });
 
-    // Bind Refresh Button
-    document.getElementById('refresh-btn').addEventListener('click', fetchAllParkingLots);
+    // bind Prediction Related Events
+    document.getElementById('btn-create-prediction').addEventListener('click', () => {
+        document.getElementById('form-create-prediction').reset();
+        modalCreatePrediction.show();
+    });
+    document.getElementById('btn-refresh-predictions').addEventListener('click', () => {
+        fetchAllPredictions();
+    });
+    document.getElementById('btn-save-prediction').addEventListener('click', () => {
+        savePrediction();
+    });
+    document.getElementById('btn-update-prediction').addEventListener('click', () => {
+        updatePrediction();
+    });
 
-    // Initial load list
-    fetchAllParkingLots();
+    // Tab Load data when switching
+    document.querySelectorAll('#managementTabs .nav-link').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', (e) => {
+            const target = e.target.getAttribute('aria-controls');
+            if (target === 'content-parkinglots') {
+                fetchAllParkingLots();
+            } else if (target === 'content-models') {
+                fetchAllModels();
+            } else if (target === 'content-predictions') {
+                fetchAllPredictions();
+            }
+        });
+    });
 
-    // Global mount for direct call in HTML
-    window.editParkingLot = function (lot_id) {
-        fetch(baseURL + '/parking_lot/' + lot_id)
+    // -------------------------------
+    // Parking Lot
+    // -------------------------------
+    window.editParkingLot = (lotId) => {
+        fetch(`${baseURL}/parking_lot/${lotId}`)
             .then(res => res.json())
             .then(data => {
                 if (data.message === 'Parking lot not found') {
                     alert(data.message);
                 } else {
-                    // Populate the fields of the update form
-                    document.getElementById('update-id').value = data.lot_id;
-                    document.getElementById('update-name').value = data.name;
-                    document.getElementById('update-address').value = data.address;
-                    document.getElementById('update-lat').value = data.latitude;
-                    document.getElementById('update-lng').value = data.longitude;
-                    document.getElementById('update-total').value = data.total_spaces;
-                    document.getElementById('update-available').value = data.available_spaces;
-
-                    // Show update pop-up window
-                    updateModal.show();
+                    document.getElementById('input-update-id').value = data.lot_id;
+                    document.getElementById('input-update-name').value = data.name;
+                    document.getElementById('input-update-address').value = data.address;
+                    document.getElementById('input-update-lat').value = data.latitude;
+                    document.getElementById('input-update-lng').value = data.longitude;
+                    document.getElementById('input-update-total').value = data.total_spaces;
+                    document.getElementById('input-update-available').value = data.available_spaces;
+                    modalUpdateParkingLot.show();
                 }
             })
-            .catch(err => console.error('Edit lot error:', err));
-    }
+            .catch(err => console.error('Edit Parking Lot error:', err));
+    };
 
-    window.deleteParkingLot = function (lot_id) {
+    window.deleteParkingLot = (lotId) => {
         if (!confirm('Are you sure you want to delete this record?')) return;
-
-        fetch(baseURL + '/parking_lot/' + lot_id, { method: 'DELETE' })
+        fetch(`${baseURL}/parking_lot/${lotId}`, { method: 'DELETE' })
             .then(res => res.json())
             .then(data => {
                 alert(data.message);
                 fetchAllParkingLots();
             })
-            .catch(err => console.error('Delete lot error:', err));
-    }
+            .catch(err => console.error('Delete Parking Lot error:', err));
+    };
 
-    window.createParkingLot = function () {
-        const name = document.getElementById('create-name').value;
-        const address = document.getElementById('create-address').value;
-        const latitude = parseFloat(document.getElementById('create-lat').value);
-        const longitude = parseFloat(document.getElementById('create-lng').value);
-        const total_spaces = parseInt(document.getElementById('create-total').value);
-        const available_spaces = parseInt(document.getElementById('create-available').value);
+    const createParkingLot = () => {
+        const name = document.getElementById('input-create-name').value;
+        const address = document.getElementById('input-create-address').value;
+        const latitude = parseFloat(document.getElementById('input-create-lat').value);
+        const longitude = parseFloat(document.getElementById('input-create-lng').value);
+        const totalSpaces = parseInt(document.getElementById('input-create-total').value);
+        const availableSpaces = parseInt(document.getElementById('input-create-available').value);
 
-        fetch(baseURL + '/parking_lot', {
+        fetch(`${baseURL}/parking_lot`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                address,
-                latitude,
-                longitude,
-                total_spaces,
-                available_spaces
-            })
+            body: JSON.stringify({ name, address, latitude, longitude, total_spaces: totalSpaces, available_spaces: availableSpaces })
         })
             .then(res => res.json())
             .then(data => {
-                alert(data.message + ' (lot_id=' + data.lot_id + ')');
-                document.getElementById('create-form').reset();
-                createModal.hide();
+                alert(`${data.message} (lot_id=${data.lot_id})`);
+                modalCreateParkingLot.hide();
                 fetchAllParkingLots();
             })
-            .catch(err => console.error('Create lot error:', err));
-    }
+            .catch(err => console.error('Create Parking Lot error:', err));
+    };
 
-    window.updateParkingLot = function () {
-        const lot_id = document.getElementById('update-id').value;
-        const name = document.getElementById('update-name').value;
-        const address = document.getElementById('update-address').value;
-        const latitude = parseFloat(document.getElementById('update-lat').value);
-        const longitude = parseFloat(document.getElementById('update-lng').value);
-        const total_spaces = parseInt(document.getElementById('update-total').value);
-        const available_spaces = parseInt(document.getElementById('update-available').value);
+    const updateParkingLot = () => {
+        const lotId = document.getElementById('input-update-id').value;
+        const name = document.getElementById('input-update-name').value;
+        const address = document.getElementById('input-update-address').value;
+        const latitude = parseFloat(document.getElementById('input-update-lat').value);
+        const longitude = parseFloat(document.getElementById('input-update-lng').value);
+        const totalSpaces = parseInt(document.getElementById('input-update-total').value);
+        const availableSpaces = parseInt(document.getElementById('input-update-available').value);
 
-        fetch(baseURL + '/parking_lot/' + lot_id, {
+        fetch(`${baseURL}/parking_lot/${lotId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                address,
-                latitude,
-                longitude,
-                total_spaces,
-                available_spaces
-            })
+            body: JSON.stringify({ name, address, latitude, longitude, total_spaces: totalSpaces, available_spaces: availableSpaces })
         })
             .then(res => res.json())
             .then(data => {
                 alert(data.message);
-                updateModal.hide();
+                modalUpdateParkingLot.hide();
                 fetchAllParkingLots();
             })
-            .catch(err => console.error('Update lot error:', err));
-    }
+            .catch(err => console.error('Update Parking Lot error:', err));
+    };
 
-    function fetchAllParkingLots() {
-        fetch(baseURL + '/parking_lots')
+    const fetchAllParkingLots = () => {
+        fetch(`${baseURL}/parking_lots`)
             .then(res => res.json())
             .then(data => {
-                populateTable(data);
+                populateTable('table-parkinglots', data, renderParkingLotRow);
             })
-            .catch(err => console.error('Fetch all lots error:', err));
-    }
+            .catch(err => console.error('Fetch Parking Lots error:', err));
+    };
 
-    function populateTable(data) {
-        const tableBody = document.querySelector('#parking-lots-table tbody');
-        tableBody.innerHTML = '';
-        data.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
+    const renderParkingLotRow = (item) => {
+        return `
+      <tr>
         <td>${item.lot_id}</td>
         <td>${item.name}</td>
         <td>${item.address}</td>
@@ -156,8 +159,160 @@ document.addEventListener('DOMContentLoaded', function () {
           <button class="btn btn-sm btn-primary" onclick="editParkingLot(${item.lot_id})">Edit</button>
           <button class="btn btn-sm btn-danger" onclick="deleteParkingLot(${item.lot_id})">Delete</button>
         </td>
-      `;
-            tableBody.appendChild(row);
-        });
-    }
+      </tr>
+    `;
+    };
+
+    // -------------------------------
+    // Model Management
+    // -------------------------------
+    const fetchAllModels = () => {
+        fetch(`${baseURL}/models`)
+            .then(res => res.json())
+            .then(data => {
+                populateTable('table-models', data, renderModelRow);
+            })
+            .catch(err => console.error('Fetch Models error:', err));
+    };
+
+    const renderModelRow = (item) => {
+        return `
+      <tr>
+        <td>${item.model_id}</td>
+        <td>${item.model_name}</td>
+        <td>${item.description}</td>
+        <td>${item.created_at}</td>
+        <td>${item.updated_at}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="editModel(${item.model_id})">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteModel(${item.model_id})">Delete</button>
+        </td>
+      </tr>
+    `;
+    };
+
+    // -------------------------------
+    // Prediction Management
+    // -------------------------------
+    const fetchAllPredictions = () => {
+        fetch(`${baseURL}/predictions`)
+            .then(res => res.json())
+            .then(data => {
+                populateTable('table-predictions', data, renderPredictionRow);
+            })
+            .catch(err => console.error('Fetch Predictions error:', err));
+    };
+
+    const renderPredictionRow = (item) => {
+        return `
+      <tr>
+        <td>${item.prediction_id}</td>
+        <td>${item.lot_id}</td>
+        <td>${item.prediction_time}</td>
+        <td>${item.predicted_occupied_spaces || 'N/A'}</td>
+        <td>${item.predicted_available_spaces || 'N/A'}</td>
+        <td>${item.predicted_occupancy_rate || 'N/A'}</td>
+        <td>${item.confidence_score || 'N/A'}</td>
+        <td>${item.model_version || 'N/A'}</td>
+        <td>${item.created_at}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="editPrediction(${item.prediction_id})">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePrediction(${item.prediction_id})">Delete</button>
+        </td>
+      </tr>
+    `;
+    };
+
+    // Generic table-filling function
+    const populateTable = (tableId, data, renderRow) => {
+        const tbody = document.getElementById(tableId).querySelector('tbody');
+        tbody.innerHTML = data.map(renderRow).join('');
+    };
+
+    const savePrediction = () => {
+        const predictionData = {
+            lot_id: document.getElementById('input-create-lot-id').value,
+            prediction_time: document.getElementById('input-create-prediction-time').value,
+            predicted_occupied_spaces: document.getElementById('input-create-predicted-occupied').value || null,
+            predicted_available_spaces: document.getElementById('input-create-predicted-available').value || null,
+            predicted_occupancy_rate: document.getElementById('input-create-predicted-occupancy').value || null,
+            confidence_score: document.getElementById('input-create-confidence-score').value || null,
+            model_version: document.getElementById('input-create-model-version').value || null
+        };
+
+        fetch(`${baseURL}/prediction`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(predictionData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                modalCreatePrediction.hide();
+                fetchAllPredictions();
+            })
+            .catch(err => console.error('Create Prediction error:', err));
+    };
+
+    window.editPrediction = (predictionId) => {
+        fetch(`${baseURL}/prediction/${predictionId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.message === 'Prediction not found') {
+                    alert(data.message);
+                } else {
+                    document.getElementById('input-update-prediction-id').value = data.prediction_id;
+                    document.getElementById('input-update-lot-id').value = data.lot_id;
+                    // Replace the space with "T" to fit the datetime-local format
+                    document.getElementById('input-update-prediction-time').value = data.prediction_time.replace(' ', 'T');
+                    document.getElementById('input-update-predicted-occupied').value = data.predicted_occupied_spaces || '';
+                    document.getElementById('input-update-predicted-available').value = data.predicted_available_spaces || '';
+                    document.getElementById('input-update-predicted-occupancy').value = data.predicted_occupancy_rate || '';
+                    document.getElementById('input-update-confidence-score').value = data.confidence_score || '';
+                    document.getElementById('input-update-model-version').value = data.model_version || '';
+                    modalUpdatePrediction.show();
+                }
+            })
+            .catch(err => console.error('Edit Prediction error:', err));
+    };
+
+    const updatePrediction = () => {
+        const predictionId = document.getElementById('input-update-prediction-id').value;
+        const predictionData = {
+            lot_id: document.getElementById('input-update-lot-id').value,
+            prediction_time: document.getElementById('input-update-prediction-time').value,
+            predicted_occupied_spaces: document.getElementById('input-update-predicted-occupied').value || null,
+            predicted_available_spaces: document.getElementById('input-update-predicted-available').value || null,
+            predicted_occupancy_rate: document.getElementById('input-update-predicted-occupancy').value || null,
+            confidence_score: document.getElementById('input-update-confidence-score').value || null,
+            model_version: document.getElementById('input-update-model-version').value || null
+        };
+
+        fetch(`${baseURL}/prediction/${predictionId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(predictionData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                modalUpdatePrediction.hide();
+                fetchAllPredictions();
+            })
+            .catch(err => console.error('Update Prediction error:', err));
+    };
+
+    window.deletePrediction = (predictionId) => {
+        if (!confirm('Are you sure you want to delete this prediction?')) return;
+        fetch(`${baseURL}/prediction/${predictionId}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                fetchAllPredictions();
+            })
+            .catch(err => console.error('Delete Prediction error:', err));
+    };
+
+    // Parking Lots data is loaded by default
+    fetchAllParkingLots();
 });

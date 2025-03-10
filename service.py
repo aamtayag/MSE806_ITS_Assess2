@@ -103,10 +103,10 @@ def recommend_parking(user_lat, user_lon, filter_distance=3):
             "score": round(score, 2),
         }
         all_lots.append(lot_info)
-
-        if best_score is None or score < best_score:
-            best_score = score
-            best_lot = lot_info
+        if score > 0:
+            if best_score is None or score < best_score:
+                best_score = score
+                best_lot = lot_info
 
     return {"all_lots": all_lots, "best_lot": best_lot}
 
@@ -236,5 +236,105 @@ def delete_parking_lot(lot_id):
     cursor = conn.cursor()
     delete_sql = "DELETE FROM parkinglots WHERE lot_id = ?"
     cursor.execute(delete_sql, (lot_id,))
+    conn.commit()
+    conn.close()
+
+
+def get_all_predictions():
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM ai_predictions")
+    rows = cursor.fetchall()
+    conn.close()
+    return [
+        dict(zip([column[0] for column in cursor.description], row)) for row in rows
+    ]
+
+
+def get_prediction(prediction_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM ai_predictions WHERE prediction_id = ?", (prediction_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return dict(zip([column[0] for column in cursor.description], row))
+    return None
+
+
+def create_prediction(
+    lot_id,
+    prediction_time,
+    predicted_occupied_spaces,
+    predicted_available_spaces,
+    predicted_occupancy_rate,
+    confidence_score,
+    model_version,
+):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO ai_predictions (lot_id, prediction_time, predicted_occupied_spaces, predicted_available_spaces, 
+                                   predicted_occupancy_rate, confidence_score, model_version)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """,
+        (
+            lot_id,
+            prediction_time,
+            predicted_occupied_spaces,
+            predicted_available_spaces,
+            predicted_occupancy_rate,
+            confidence_score,
+            model_version,
+        ),
+    )
+    conn.commit()
+    prediction_id = cursor.lastrowid
+    conn.close()
+    return prediction_id
+
+
+def update_prediction(
+    prediction_id,
+    lot_id,
+    prediction_time,
+    predicted_occupied_spaces,
+    predicted_available_spaces,
+    predicted_occupancy_rate,
+    confidence_score,
+    model_version,
+):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE ai_predictions
+        SET lot_id = ?, prediction_time = ?, predicted_occupied_spaces = ?, predicted_available_spaces = ?, 
+            predicted_occupancy_rate = ?, confidence_score = ?, model_version = ?
+        WHERE prediction_id = ?
+    """,
+        (
+            lot_id,
+            prediction_time,
+            predicted_occupied_spaces,
+            predicted_available_spaces,
+            predicted_occupancy_rate,
+            confidence_score,
+            model_version,
+            prediction_id,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+def delete_prediction(prediction_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM ai_predictions WHERE prediction_id = ?", (prediction_id,)
+    )
     conn.commit()
     conn.close()

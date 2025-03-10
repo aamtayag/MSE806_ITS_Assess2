@@ -60,10 +60,13 @@ function loadParkingData() {
         .then(data => {
             // Compute the distance from the user's currentLocation to each parking lot
             const allLots = data.all_lots;
+
+            const bestLots = data.best_lot;
+            console.log("Best Lots:", bestLots);
+
             if (!Array.isArray(allLots)) {
                 throw new Error("No 'all_lots' array found in response");
             }
-
 
             parkingData = allLots.map(lot => ({
                 ...lot,
@@ -76,7 +79,13 @@ function loadParkingData() {
             }));
 
             // Sort parking lots from closest to farthest
-            parkingData.sort((a, b) => a.distance - b.distance);
+            parkingData.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return a.score - b.score; // score from low to high
+                } else {
+                    return a.distance - b.distance; // distance from low to high
+                }
+            });
 
             // Create a Marker and InfoWindow for each parking lot
             parkingData.forEach(lot => {
@@ -93,9 +102,14 @@ function loadParkingData() {
                     setInfoWindow(lot);
                     currentInfoWindow.open(map, marker);
                 });
-
+                parkingMarkers.push(marker);
                 lot.marker = marker;
                 // 
+
+                if (bestLots.lot_id === lot.lot_id) {
+                    lot.best_lot = true;
+                }
+
             });
 
             // Update the list in the side panel
@@ -126,17 +140,31 @@ function updateParkingList() {
         console.warn("Element with id='parking-items' not found in the DOM.");
         return;
     }
-
     parkingList.innerHTML = "";
+
+    // Empty state
+    if (parkingData.length === 0) {
+        const noDataItem = document.createElement('li');
+        noDataItem.classList.add('parking-item');
+        noDataItem.textContent = "No parking lots found nearby.";
+        parkingList.appendChild(noDataItem);
+        return;
+    }
 
     parkingData.forEach((lot, index) => {
         const item = document.createElement('li');
         item.classList.add('parking-item');
+
+        if (lot.best_lot) {
+            item.classList.add('best-lot');
+        }
+
         item.innerHTML = `
-      <strong>${lot.name}</strong><br>
+      <strong>${lot.name} ${lot.best_lot ? "<span class='best-label'>🏅 Best 🏅</span>" : ""}</strong><br>
       Distance: ${lot.distance.toFixed(2)} km<br>
       Parking space: ${lot.available_spaces} / ${lot.total_spaces}<br>
       Price: ${lot.price_per_hour}<br>
+      Score: ${lot.score}<br>
       <button onclick="viewParking(${index})">View</button>
       <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
       <button onclick="predictedParkingSpaces(${lot.latitude}, ${lot.longitude})">Predition</button>
