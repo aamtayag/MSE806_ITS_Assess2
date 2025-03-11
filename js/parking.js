@@ -3,6 +3,7 @@
 let parkingData = [];
 let parkingMarkers = [];
 
+
 /**
  * Calculates the distance (in km) between two latitude-longitude points
  * on Earth using the Haversine formula.
@@ -32,6 +33,12 @@ function cleanMarkersAndData() {
     parkingData = [];
 }
 
+// Get the value of the distance selection box
+function getSelectedDistance() {
+    const distanceSelect = document.getElementById("distance-select");
+    return distanceSelect.value;
+}
+
 
 /**
  * Loads parking data from either a local JSON (if DEBUG_MODE is true)
@@ -48,15 +55,18 @@ function loadParkingData() {
 
     cleanMarkersAndData();
 
-    fetch(`${window.API_CONFIG.API_BASE_URL}/api/recommend?lat=${currentLocation.lat}&lng=${currentLocation.lng}`)
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/recommend?lat=${currentLocation.lat}&lng=${currentLocation.lng}&distance=${getSelectedDistance()}`)
         .then(response => response.json())
         .then(data => {
             // Compute the distance from the user's currentLocation to each parking lot
             const allLots = data.all_lots;
+
+            const bestLots = data.best_lot;
+            console.log("Best Lots:", bestLots);
+
             if (!Array.isArray(allLots)) {
                 throw new Error("No 'all_lots' array found in response");
             }
-
 
             parkingData = allLots.map(lot => ({
                 ...lot,
@@ -69,7 +79,13 @@ function loadParkingData() {
             }));
 
             // Sort parking lots from closest to farthest
-            parkingData.sort((a, b) => a.distance - b.distance);
+            parkingData.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return a.score - b.score; // score from low to high
+                } else {
+                    return a.distance - b.distance; // distance from low to high
+                }
+            });
 
             // Create a Marker and InfoWindow for each parking lot
             parkingData.forEach(lot => {
@@ -79,22 +95,21 @@ function loadParkingData() {
                     title: lot.name
                 });
 
-                const infoWindow = new google.maps.InfoWindow({
-                    content: `
-            <h3>${lot.name}</h3>
-            <p>Available: ${lot.available_spaces} / ${lot.total_spaces}</p>
-            <p>Price: ${lot.price_per_hour}</p>
-            <p>Distance: ${lot.distance.toFixed(2)} km</p>
-            <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
-          `
-                });
-
                 marker.addListener("click", () => {
-                    infoWindow.open(map, marker);
+                    if (currentInfoWindow) {
+                        currentInfoWindow.close();
+                    }
+                    setInfoWindow(lot);
+                    currentInfoWindow.open(map, marker);
                 });
-
+                parkingMarkers.push(marker);
                 lot.marker = marker;
-                lot.infoWindow = infoWindow;
+                // 
+
+                if (bestLots.lot_id === lot.lot_id) {
+                    lot.best_lot = true;
+                }
+
             });
 
             // Update the list in the side panel
@@ -105,6 +120,17 @@ function loadParkingData() {
         });
 }
 
+function setInfoWindow(lot) {
+    currentInfoWindow.setContent(`
+        <h3>${lot.name}</h3>
+        <p>Available: ${lot.available_spaces} / ${lot.total_spaces}</p>
+        <p>Price: ${lot.price_per_hour}</p>
+        <p>Distance: ${lot.distance.toFixed(2)} km</p>
+        <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
+    `);
+}
+
+
 /**
  * Updates the DOM list (e.g., <ul id="parking-items">) with the current sorted parkingData.
  */
@@ -114,20 +140,47 @@ function updateParkingList() {
         console.warn("Element with id='parking-items' not found in the DOM.");
         return;
     }
-
     parkingList.innerHTML = "";
+
+    // Empty state
+    if (parkingData.length === 0) {
+        const noDataItem = document.createElement('li');
+        noDataItem.classList.add('parking-item');
+        noDataItem.textContent = "No parking lots found nearby.";
+        parkingList.appendChild(noDataItem);
+        return;
+    }
 
     parkingData.forEach((lot, index) => {
         const item = document.createElement('li');
         item.classList.add('parking-item');
+
+        if (lot.best_lot) {
+            item.classList.add('best-lot');
+        }
+
         item.innerHTML = `
-      <strong>${lot.name}</strong><br>
+      <strong>${lot.name} ${lot.best_lot ? "<span class='best-label'>🏅 Best 🏅</span>" : ""}</strong><br>
       Distance: ${lot.distance.toFixed(2)} km<br>
       Parking space: ${lot.available_spaces} / ${lot.total_spaces}<br>
       Price: ${lot.price_per_hour}<br>
+      Score: ${lot.score}<br>
       <button onclick="viewParking(${index})">View</button>
       <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
-      <button onclick="predictedParkingSpaces(${lot.latitude}, ${lot.longitude})">Predition</button>
+      <button onclick="togglePredictionSection(${index})">Prediction</button>
+
+      <!-- Forecast area (hidden by default), which will be displayed after clicking the button -->
+      <div id="prediction-section-${index}" class="prediction-section" style="display: none; margin-top: 10px;">
+        
+        <!-- Drop-down box (from 15 minutes to 24 hours, every 15 minutes) -->
+        <label>Select Interval:</label>
+        <select id="prediction-select-${index}">
+          ${generateTimeOptions()} 
+        </select>
+        <button onclick="submitPrediction(${lot.lot_id}, ${index})">OK</button>
+
+        <div id="prediction-result-${index}" class="prediction-result" style="margin-top: 10px; color: #333;"></div>
+      </div>
     `;
         parkingList.appendChild(item);
     });
@@ -173,9 +226,6 @@ function predictedParkingSpaces(lat, lng) {
 }
 
 
-// Keep track of the currently opened InfoWindow so we can close it when viewing another one
-let currentInfoWindow = null;
-
 /**
  * Focus the map on a specific parking lot, open its InfoWindow,
  * and close any previously opened InfoWindow.
@@ -184,6 +234,8 @@ let currentInfoWindow = null;
 function viewParking(index) {
     const lot = parkingData[index];
     console.log(`Focusing on parking lot: ${lot.name}`);
+
+    console.log(`infoWindow: ${lot.infoWindow}`);
 
     // Close the previously opened info window if any
     if (currentInfoWindow) {
@@ -195,9 +247,72 @@ function viewParking(index) {
     map.setZoom(16);
 
     // Open its InfoWindow
-    lot.infoWindow.open(map, lot.marker);
-    currentInfoWindow = lot.infoWindow;
+    setInfoWindow(lot);
+    currentInfoWindow.open(map, lot.marker);
 }
+
+function generateTimeOptions() {
+    let html = '';
+    for (let i = 15; i <= 1440; i += 15) {
+        html += `<option value="${i}" ${i === 60 ? 'selected' : ''}>${i} minutes</option>`;
+    }
+    return html;
+}
+
+function togglePredictionSection(index) {
+    const section = document.getElementById(`prediction-section-${index}`);
+    if (!section) return;
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+function submitPrediction(lot_id, index) {
+    // 1) Get the number of minutes selected by the user
+    const selectEl = document.getElementById(`prediction-select-${index}`);
+    const chosenMinutes = parseInt(selectEl.value, 10);
+
+    // 2) Calculate "Predicted Execution Time" and "Predicted Downtime"
+    const now = new Date();
+    const nowStr = formatDateTime(now);
+    const future = new Date(now.getTime() + chosenMinutes * 60000);
+    const futureStr = formatDateTime(future);
+
+    // 3) Demo request to the prediction API
+    // { predicted_spaces: 10, predicted_score: 0.85, message: "ok" }
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${futureStr}`)
+        .then(response => response.json())
+        .then(data => {
+            // 4) Display the data returned by the backend + the time calculated above to the page
+            const resultEl = document.getElementById(`prediction-result-${index}`);
+            resultEl.innerHTML = `
+              <p><strong>Prediction execution time:</strong> ${nowStr}</p>
+              <p><strong>Prediction parking time:</strong> ${futureStr}</p>
+              <p><strong>Predicted parking spaces:</strong> ${data.predicted_spaces}</p>
+              <p><strong>Predicted score:</strong> ${data.predicted_score}</p>
+            `;
+        })
+        .catch(err => {
+            console.error('Prediction request error:', err);
+            alert('Prediction failed: ' + err);
+        });
+
+}
+
+function formatDateTime(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const hour = String(dateObj.getHours()).padStart(2, '0');
+    const minute = String(dateObj.getMinutes()).padStart(2, '0');
+    const second = String(dateObj.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
+
+
+
 
 // Expose functions to the global scope if needed
 window.loadParkingData = loadParkingData;
