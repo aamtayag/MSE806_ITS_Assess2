@@ -6,6 +6,7 @@ import json
 from flask import Flask, jsonify, request, send_from_directory
 from threading import Timer
 import service
+import model_training.a2_modeling_v2 as predition_model
 
 from service import (
     recommend_parking,
@@ -86,17 +87,25 @@ def api_recommend():
 
 @app.route("/api/predict", methods=["GET"])
 def api_predict():
-    """
-    TODO Predicting congestion after X hours
-    GET /api/predict?hour_offset=2
-    """
     try:
-        hour_offset = int(request.args.get("hour_offset", 0))
+        lot_id = int(request.args["lot_id"])
+        predition_time = str(request.args["predition_time"])
+        print(f"lot_id : {lot_id}")
+        print(f"predition_time : {predition_time}")
+
     except ValueError:
         return jsonify({"error": "Invalid hour_offset"}), 400
 
-    result = predict_congestion(hour_offset)
+    result = predictparkinglot(predition_time, lot_id)
     return jsonify(result)
+
+
+def predictparkinglot(prediction_time, parkinglot_id):
+    # TODO It needs to be implemented
+    predict = predition_model.predict(prediction_time, parkinglot_id)
+    print(f"predict : {predict}")
+    # return predict
+    return {"predicted_spaces": 10, "predicted_score": 0.85, "message": "ok"}
 
 
 @app.route("/parking_lot", methods=["POST"])

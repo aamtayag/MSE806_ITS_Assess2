@@ -167,7 +167,20 @@ function updateParkingList() {
       Score: ${lot.score}<br>
       <button onclick="viewParking(${index})">View</button>
       <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
-      <button onclick="predictedParkingSpaces(${lot.latitude}, ${lot.longitude})">Predition</button>
+      <button onclick="togglePredictionSection(${index})">Prediction</button>
+
+      <!-- Forecast area (hidden by default), which will be displayed after clicking the button -->
+      <div id="prediction-section-${index}" class="prediction-section" style="display: none; margin-top: 10px;">
+        
+        <!-- Drop-down box (from 15 minutes to 24 hours, every 15 minutes) -->
+        <label>Select Interval:</label>
+        <select id="prediction-select-${index}">
+          ${generateTimeOptions()} 
+        </select>
+        <button onclick="submitPrediction(${lot.lot_id}, ${index})">OK</button>
+
+        <div id="prediction-result-${index}" class="prediction-result" style="margin-top: 10px; color: #333;"></div>
+      </div>
     `;
         parkingList.appendChild(item);
     });
@@ -237,6 +250,69 @@ function viewParking(index) {
     setInfoWindow(lot);
     currentInfoWindow.open(map, lot.marker);
 }
+
+function generateTimeOptions() {
+    let html = '';
+    for (let i = 15; i <= 1440; i += 15) {
+        html += `<option value="${i}" ${i === 60 ? 'selected' : ''}>${i} minutes</option>`;
+    }
+    return html;
+}
+
+function togglePredictionSection(index) {
+    const section = document.getElementById(`prediction-section-${index}`);
+    if (!section) return;
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+function submitPrediction(lot_id, index) {
+    // 1) Get the number of minutes selected by the user
+    const selectEl = document.getElementById(`prediction-select-${index}`);
+    const chosenMinutes = parseInt(selectEl.value, 10);
+
+    // 2) Calculate "Predicted Execution Time" and "Predicted Downtime"
+    const now = new Date();
+    const nowStr = formatDateTime(now);
+    const future = new Date(now.getTime() + chosenMinutes * 60000);
+    const futureStr = formatDateTime(future);
+
+    // 3) Demo request to the prediction API
+    // { predicted_spaces: 10, predicted_score: 0.85, message: "ok" }
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${futureStr}`)
+        .then(response => response.json())
+        .then(data => {
+            // 4) Display the data returned by the backend + the time calculated above to the page
+            const resultEl = document.getElementById(`prediction-result-${index}`);
+            resultEl.innerHTML = `
+              <p><strong>Prediction execution time:</strong> ${nowStr}</p>
+              <p><strong>Prediction parking time:</strong> ${futureStr}</p>
+              <p><strong>Predicted parking spaces:</strong> ${data.predicted_spaces}</p>
+              <p><strong>Predicted score:</strong> ${data.predicted_score}</p>
+            `;
+        })
+        .catch(err => {
+            console.error('Prediction request error:', err);
+            alert('Prediction failed: ' + err);
+        });
+
+}
+
+function formatDateTime(dateObj) {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const hour = String(dateObj.getHours()).padStart(2, '0');
+    const minute = String(dateObj.getMinutes()).padStart(2, '0');
+    const second = String(dateObj.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
+
+
+
 
 // Expose functions to the global scope if needed
 window.loadParkingData = loadParkingData;
