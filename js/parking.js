@@ -290,8 +290,7 @@ function submitPrediction(lot_id, index) {
             resultEl.innerHTML = `
               <p><strong>Prediction execution time:</strong> ${nowStr}</p>
               <p><strong>Prediction parking time:</strong> ${futureStr}</p>
-              <p><strong>Predicted parking spaces:</strong> ${data.predicted_spaces}</p>
-              <p><strong>Predicted score:</strong> ${data.predicted_score}</p>
+              <p><strong>Vehicles increased:</strong> ${data}</p>
             `;
         })
         .catch(err => {

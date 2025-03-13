@@ -3,8 +3,17 @@
 import sqlite3
 import math
 from datetime import datetime, timedelta
+import model_training.lite_predict as predition_model
 
 DB_PATH = "SmartParking.db"
+
+WEEK_END = "weekend"
+WEEK_DAY = "weekday"
+
+MODEL_LSTM = "lstm"
+MODEL_DNN = "dnn"
+
+FIFTEEN_MINUTES = 15 * 60
 
 
 def connect_db():
@@ -338,3 +347,114 @@ def delete_prediction(prediction_id):
     )
     conn.commit()
     conn.close()
+
+
+def predictparkinglot(prediction_time, parkinglot_id):
+    print("prediction_time", prediction_time)
+    try:
+        # Parse the string as a datetime object, and then take out the date part
+        format_prediction_time = datetime.strptime(prediction_time, "%Y-%m-%d %H:%M:%S")
+
+    except ValueError:
+        return "The date format is wrong, please use the correct format, eg：YYYY-MM-DD HH:MM:SS"
+
+    inputdatalist = get_parkingtransactions_by_time(
+        format_prediction_time, parkinglot_id
+    )
+
+    # Default model type
+    model_type = MODEL_LSTM
+    model = get_model(format_prediction_time, model_type)
+
+    print("inputdatalist", inputdatalist)
+    print("model", model)
+
+    predict = 20
+    # predict = predition_model.predict_wrapper(
+    #    model, inputdatalist, prediction_time, parkinglot_id
+    # )
+    # return predict
+    return predict
+
+
+def check_day(date_obj):
+    # weekday() Method: Return 0 on Monday ,..., 6 on Sunday
+    if date_obj.date().weekday() >= 5:
+        return WEEK_END
+    else:
+        return WEEK_DAY
+
+
+def get_model(prediction_time, model_type=MODEL_LSTM):
+    day_type = check_day(prediction_time)
+    """
+    modeltype:
+            g_model_type_lstm_weekdays
+            g_model_type_lstm_weekends
+            g_model_type_dnn_weekdays
+            g_model_type_dnn_weekends
+
+    """
+    model_mapping = {
+        WEEK_END: {
+            MODEL_LSTM: predition_model.g_model_type_lstm_weekends,
+            MODEL_DNN: predition_model.g_model_type_dnn_weekends,
+        },
+        WEEK_DAY: {
+            MODEL_LSTM: predition_model.g_model_type_lstm_weekdays,
+            MODEL_DNN: predition_model.g_model_type_dnn_weekdays,
+        },
+    }
+
+    try:
+        model = model_mapping[day_type][model_type]
+    except KeyError:
+        raise ValueError(
+            f"Invalid date type or model type: day_type={day_type}, model_type={model_type}"
+        )
+
+    return model
+
+
+def get_parkingtransactions_by_time(end_datatime, parking_lot_id):
+    start_time = end_datatime - timedelta(hours=16)
+    conn = connect_db()
+    cursor = conn.cursor()
+    query = """
+        SELECT 
+            CAST(strftime('%s', entry_time) / 900 AS INT) AS interval_15,
+            COUNT(*) AS total_count
+        FROM parkingtransactions
+        WHERE parking_lot_id = ?
+          AND datetime(entry_time) >= ?
+          AND datetime(entry_time) <= ?
+        GROUP BY interval_15
+        ORDER BY interval_15;
+    """
+    params = (parking_lot_id, start_time, end_datatime)
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    print("rows", rows)
+    result_dict = {row[0]: row[1] for row in rows}
+    return fill_missing_intervals(result_dict, start_time, end_datatime)
+
+
+def fill_missing_intervals(result_dict, start_time, end_time):
+    values = []
+    current = start_time
+    while current < end_time:
+        # Calculate the key corresponding to the current 15-minute interval
+        interval_15 = int(current.timestamp() // FIFTEEN_MINUTES)
+        values.append(result_dict.get(interval_15, 0))
+        current += timedelta(minutes=15)
+
+    # check
+    if len(values) == 64:
+        print("The resulting list is 64 in length:", values)
+    else:
+        print(
+            f"The resulting list is NOT 64 in length, but in actual length {len(values)}:",
+            values,
+        )
+    return values
