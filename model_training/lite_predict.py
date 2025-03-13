@@ -14,7 +14,6 @@ model_dnn_weekdays = None
 model_dnn_weekends = None
 
 
-
 g_step_backward = 4*16
 
 
@@ -35,10 +34,15 @@ def init_log():
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT,)
 
 #model file name config
-g_filename_lstm_weekdays = f'{get_runtime_path()}modeldir_v2/lstm_weekdays.keras'
-g_filename_lstm_weekends = f'{get_runtime_path()}modeldir_v2/lstm_weekends.keras'
-g_filename_dnn_weekend = f'{get_runtime_path()}modeldir_v2/dnn_weekends.keras'
-g_filename_dnn_weekdays = f'{get_runtime_path()}modeldir_v2/dnn_weekdays.keras'
+# g_filename_lstm_weekdays = f'{get_runtime_path()}modeldir_v2/lstm_weekdays.keras'
+# g_filename_lstm_weekends = f'{get_runtime_path()}modeldir_v2/lstm_weekends.keras'
+# g_filename_dnn_weekend = f'{get_runtime_path()}modeldir_v2/dnn_weekends.keras'
+# g_filename_dnn_weekdays = f'{get_runtime_path()}modeldir_v2/dnn_weekdays.keras'
+g_filename_lstm_weekdays = f'{get_runtime_path()}modeldir_v2/lstm_weekdays.h5'
+g_filename_lstm_weekends = f'{get_runtime_path()}modeldir_v2/lstm_weekends.h5'
+g_filename_dnn_weekend = f'{get_runtime_path()}modeldir_v2/dnn_weekends.h5'
+g_filename_dnn_weekdays = f'{get_runtime_path()}modeldir_v2/dnn_weekdays.h5'
+
 
 
 #model type name
@@ -187,7 +191,7 @@ def predict_wrapper(modeltype, enter_count_seq_list: list,prediction_time: str,p
     predict = Y_predict[0][0]
     if predict < 0:
         return 0
-    return abs(round(predict))
+    return round(predict)
 
 
 
@@ -208,6 +212,6 @@ def test_predict():
 
 if __name__ == '__main__':
     print('lite_predict.py')
-    init_log()
-    test_predict()
+    #init_log()
+    #test_predict()
     pass

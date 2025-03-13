@@ -675,7 +675,6 @@ def test_predict():
 
     predict = predict_wrapper(g_model_type_lstm_weekdays, inputdatalist, '2025-03-11 12:41:25',30)
     logging.info('g_model_type_lstm_weekdays predict:%s', predict)
-
     # predict = predict_wrapper(g_model_type_lstm_weekends, inputdatalist, '2021-07-17 19:41:25',3)
     # logging.info('g_model_type_lstm_weekends predict:%s', predict)
     #
@@ -711,6 +710,40 @@ def test_predict():
 #
 
 
+def convert_model():
+    from tensorflow import keras as ks
+    model = ks.models.load_model(g_filename_lstm_weekends)
+    #f'{get_runtime_path()}modeldir_v2/lstm_weekends.keras'
+    model.save(f'{get_runtime_path()}modeldir_v2/lstm_weekends_model_saved',save_format='tf')
+    import keras
+    testmodel = keras.models.load_model(f'{get_runtime_path()}modeldir_v2/lstm_weekends_model_saved')
+    testmodel.summary()
+
+
+
+def convert_model_h5():
+    #from tensorflow import keras as ks
+    import keras as ks
+    model = ks.models.load_model(g_filename_lstm_weekends)
+    #return
+    #f'{get_runtime_path()}modeldir_v2/lstm_weekends.keras'
+    path = f'{get_runtime_path()}modeldir_v2/lstm_weekends_model_saved_v1'
+    #model.save(path)
+    testmodel = ks.models.load_model(path)
+    testmodel.summary()
+
+def convert_model_h5_all():
+    import keras as ks
+    pathlist = [g_filename_lstm_weekdays,g_filename_lstm_weekends,g_filename_dnn_weekdays,g_filename_dnn_weekend]
+    #把pathlist中的模型文件转换为h5格式
+    for path in pathlist:
+        model = ks.models.load_model(path)
+        path = path.replace('.keras','.h5')
+        #logging.info('path:%s', path)
+        model.save(path, save_format='h5')
+        testmodel = ks.models.load_model(path)
+        testmodel.summary()
+
 
 if __name__=='__main__':
     init_log()
@@ -718,15 +751,17 @@ if __name__=='__main__':
     #model_lstm_analysis()
     #model_dnn_analysis()
 
-    #test_predict()
+    test_predict()
     #task_pre_process_data_and_save()
     #general_test()
 
     #lstm_train_process()
     #dnn_train_process()
-    test_predict()
+    #test_predict()
     #test_id_mapping()
-
+    #convert_model()
+    #convert_model_h5()
+    convert_model_h5_all()
 
 
 
