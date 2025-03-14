@@ -282,7 +282,7 @@ function submitPrediction(lot_id, index) {
 
     // 3) Demo request to the prediction API
     // { predicted_spaces: 10, predicted_score: 0.85, message: "ok" }
-    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${futureStr}`)
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${futureStr}&lopp_time=${chosenMinutes / 15}`)
         .then(response => response.json())
         .then(data => {
             // 4) Display the data returned by the backend + the time calculated above to the page

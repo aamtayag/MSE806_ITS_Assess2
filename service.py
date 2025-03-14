@@ -350,8 +350,7 @@ def delete_prediction(prediction_id):
     conn.close()
 
 
-def predictparkinglot(prediction_time, parkinglot_id):
-    print("prediction_time", prediction_time)
+def predictparkinglot(prediction_time, parkinglot_id, lopp_time):
     try:
         # Parse the string as a datetime object, and then take out the date part
         format_prediction_time = datetime.strptime(prediction_time, "%Y-%m-%d %H:%M:%S")
@@ -370,7 +369,7 @@ def predictparkinglot(prediction_time, parkinglot_id):
     print("model", model)
 
     predict = predition_model.predict_wrapper(
-        model, inputdatalist, prediction_time, parkinglot_id
+        model, inputdatalist, lopp_time, parkinglot_id
     )
     print("predict", predict)
     return predict
