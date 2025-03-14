@@ -269,7 +269,7 @@ function togglePredictionSection(index) {
     }
 }
 
-function submitPrediction(lot_id, index,score) {
+function submitPrediction(lot_id, index, score) {
     // 1) Get the number of minutes selected by the user
     const selectEl = document.getElementById(`prediction-select-${index}`);
     const chosenMinutes = parseInt(selectEl.value, 10);
@@ -282,7 +282,7 @@ function submitPrediction(lot_id, index,score) {
 
     // 3) Demo request to the prediction API
     // { predicted_spaces: 10, predicted_score: 0.85, message: "ok" }
-    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${futureStr}&lopp_time=${chosenMinutes / 15}&score=${score}`)
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${nowStr}&lopp_time=${chosenMinutes / 15}&score=${score}`)
         .then(response => response.json())
         .then(data => {
             // 4) Display the data returned by the backend + the time calculated above to the page
