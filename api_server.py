@@ -310,7 +310,7 @@ def run_flask():
 # -------------------------------
 if __name__ == "__main__":
     # predition_model
-    # predition_model.preload_all_model()
+    predition_model.preload_all_model()
 
     Timer(1, open_browser).start()
 

@@ -339,6 +339,7 @@ def update_prediction(
     conn.commit()
     conn.close()
 
+
 def delete_prediction(prediction_id):
     conn = connect_db()
     cursor = conn.cursor()
@@ -365,15 +366,13 @@ def predictparkinglot(prediction_time, parkinglot_id):
     # Default model type
     model_type = MODEL_LSTM
     model = get_model(format_prediction_time, model_type)
-
     print("inputdatalist", inputdatalist)
     print("model", model)
 
-    predict = 20
-    # predict = predition_model.predict_wrapper(
-    #    model, inputdatalist, prediction_time, parkinglot_id
-    # )
-    # return predict
+    predict = predition_model.predict_wrapper(
+        model, inputdatalist, prediction_time, parkinglot_id
+    )
+    print("predict", predict)
     return predict
 
 
@@ -418,43 +417,40 @@ def get_model(prediction_time, model_type=MODEL_LSTM):
 
 def get_parkingtransactions_by_time(end_datatime, parking_lot_id):
     start_time = end_datatime - timedelta(hours=16)
+
+    print(f"start_time({start_time}) - end_datatime({end_datatime})")
+
     conn = connect_db()
     cursor = conn.cursor()
+
     query = """
+        WITH RECURSIVE intervals AS ( 
+        SELECT CAST(strftime('%s', ?) / 900 AS INT) AS interval_15 
+        UNION ALL
+        SELECT interval_15 + 1
+        FROM intervals
+        WHERE interval_15 < (CAST(strftime('%s', ?) / 900 AS INT)) - 1
+        )
+        SELECT 
+        intervals.interval_15,
+        COALESCE(pt.total_count, 0) AS total_count
+        FROM intervals
+        LEFT JOIN (
         SELECT 
             CAST(strftime('%s', entry_time) / 900 AS INT) AS interval_15,
             COUNT(*) AS total_count
         FROM parkingtransactions
-        WHERE parking_lot_id = ?
-          AND datetime(entry_time) >= ?
-          AND datetime(entry_time) <= ?
+        WHERE parking_lot_id = ? 
+            AND datetime(entry_time) >= ? 
+            AND datetime(entry_time) <=? 
         GROUP BY interval_15
-        ORDER BY interval_15;
+        ) pt ON intervals.interval_15 = pt.interval_15
+        ORDER BY intervals.interval_15;
     """
-    params = (parking_lot_id, start_time, end_datatime)
+    params = (start_time, end_datatime, parking_lot_id, start_time, end_datatime)
     cursor.execute(query, params)
     rows = cursor.fetchall()
     conn.close()
     print("rows", rows)
-    result_dict = {row[0]: row[1] for row in rows}
-    return fill_missing_intervals(result_dict, start_time, end_datatime)
-
-
-def fill_missing_intervals(result_dict, start_time, end_time):
-    values = []
-    current = start_time
-    while current < end_time:
-        # Calculate the key corresponding to the current 15-minute interval
-        interval_15 = int(current.timestamp() // FIFTEEN_MINUTES)
-        values.append(result_dict.get(interval_15, 0))
-        current += timedelta(minutes=15)
-
-    # check
-    if len(values) == 64:
-        print("The resulting list is 64 in length:", values)
-    else:
-        print(
-            f"The resulting list is NOT 64 in length, but in actual length {len(values)}:",
-            values,
-        )
-    return values
+    value_list = [row[1] for row in rows]
+    return value_list
