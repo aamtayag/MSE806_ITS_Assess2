@@ -19,7 +19,7 @@ def run_predict_demo():
     #set parkinglot_id
     parkinglot_id = 30
 
-    predict = model.predict_wrapper(model.g_model_type_lstm_weekdays, inputdatalist, formatted_predict_time,parkinglot_id)
+    predict = model.predict_wrapper(model.g_model_type_lstm_weekdays, inputdatalist, 3,parkinglot_id)
     logging.info('g_model_type_lstm_weekdays predict:%s', predict)
 
     print('prediction:', predict)

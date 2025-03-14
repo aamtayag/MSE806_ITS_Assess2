@@ -109,33 +109,37 @@ Usage:
 '''
 
 
-def predict_wrapper(modeltype, enter_count_seq_list: list,prediction_time: str,parkinglot_id: int):
+def predict_wrapper(modeltype, enter_count_seq_list: list,recursive_count: int,parkinglot_id: int):
     # parameter check
     # check the value of the format of prediction_time, the format needs to be the same as:  2021-07-17 19:41:25
-    try:
-        prediction_time = pd.to_datetime(prediction_time)
-    except:
-        logging.error('ERROR invalid prediction_time:%s', prediction_time)
-        return None
-
-    #check prediction_time needs to be greater than the current time
-    if prediction_time < pd.to_datetime(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())):
-        logging.error('ERROR invalid prediction_time:%s', prediction_time)
-        return None
-
-    #check prediction_time needs to be less than the current time + 24 hours
-    if prediction_time > pd.to_datetime(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())) + pd.Timedelta('1 days'):
-        logging.error('ERROR prediction_time is 24hs later than now, invalid prediction_time:%s', prediction_time)
-        return None
-
-
-    #calculate prediction_time for recursive_count
+    # try:
+    #     prediction_time = pd.to_datetime(prediction_time)
+    # except:
+    #     logging.error('ERROR invalid prediction_time:%s', prediction_time)
+    #     return None
+    #
+    # #check prediction_time needs to be greater than the current time
+    # if prediction_time < pd.to_datetime(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())):
+    #     logging.error('ERROR invalid prediction_time:%s', prediction_time)
+    #     return None
+    #
+    # #check prediction_time needs to be less than the current time + 24 hours
+    # if prediction_time > pd.to_datetime(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())) + pd.Timedelta('1 days'):
+    #     logging.error('ERROR prediction_time is 24hs later than now, invalid prediction_time:%s', prediction_time)
+    #     return None
+    #
+    #
+    # #calculate prediction_time for recursive_count
     current_localtime = pd.to_datetime(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    diff = prediction_time - current_localtime
-    diff = diff.total_seconds() / 60
-    if diff < 15:
-        return enter_count_seq_list[-1]
-    recursive_count = int(diff // 15)
+    # diff = prediction_time - current_localtime
+    # diff = diff.total_seconds() / 60
+    # if diff < 15:
+    #     return enter_count_seq_list[-1]
+    # recursive_count = int(diff // 15)
+
+    if recursive_count < 1 or recursive_count> 24*4:
+        logging.error('ERROR invalid recursive_count:%s', recursive_count)
+        return None
 
     #check parkinglot_id is valid
     if parkinglot_id not in g_parkinglotid_list:
