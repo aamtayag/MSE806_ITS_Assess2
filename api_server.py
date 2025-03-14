@@ -91,15 +91,16 @@ def api_predict():
         lot_id = int(request.args["lot_id"])
         predition_time = str(request.args["predition_time"])
         lopp_time = int(request.args["lopp_time"])
-
+        score = float(request.args["score"])
         print(f"lot_id : {lot_id}")
         print(f"predition_time : {predition_time}")
         print(f"lopp_time : {lopp_time}")
+        print(f"score : {score}")
 
     except ValueError:
         return jsonify({"error": "Invalid hour_offset"}), 400
 
-    result = service.predictparkinglot(predition_time, lot_id, lopp_time)
+    result = service.predictparkinglot(predition_time, lot_id, lopp_time, score)
     return jsonify(result)
 
 

@@ -187,12 +187,13 @@ def create_parking_lot(
 
 def get_parking_lot(lot_id):
     conn = connect_db()
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     select_sql = "SELECT * FROM parkinglots WHERE lot_id = ?"
     cursor.execute(select_sql, (lot_id,))
     row = cursor.fetchone()
     conn.close()
-    return row
+    return dict(row) if row else None
 
 
 def get_all_parking_lots():
@@ -350,7 +351,7 @@ def delete_prediction(prediction_id):
     conn.close()
 
 
-def predictparkinglot(prediction_time, parkinglot_id, lopp_time):
+def predictparkinglot(prediction_time, parkinglot_id, lopp_time, score):
     try:
         # Parse the string as a datetime object, and then take out the date part
         format_prediction_time = datetime.strptime(prediction_time, "%Y-%m-%d %H:%M:%S")
@@ -372,6 +373,21 @@ def predictparkinglot(prediction_time, parkinglot_id, lopp_time):
         model, inputdatalist, lopp_time, parkinglot_id
     )
     print("predict", predict)
+
+    # Save the prediction result to the database
+
+    parking_lot = get_parking_lot(parkinglot_id)
+
+    print("parking_lot", parking_lot)
+    create_prediction(
+        parkinglot_id,
+        prediction_time,
+        predict,
+        parking_lot["available_spaces"],
+        parking_lot["available_spaces"] / parking_lot["total_spaces"],
+        score,
+        model_type,
+    )
     return predict
 
 
