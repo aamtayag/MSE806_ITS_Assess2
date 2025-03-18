@@ -278,6 +278,17 @@ function submitPrediction(lot_id, index) {
     const future = new Date(now.getTime() + chosenMinutes * 60000);
     const futureStr = formatDateTime(future);
 
+
+    // loockup the element🔄
+    const buttonEl = document.querySelector(`#prediction-section-${index} button`);
+    const resultEl = document.getElementById(`prediction-result-${index}`);
+
+    buttonEl.disabled = true;
+    buttonEl.innerText = "Processing...";
+    resultEl.innerHTML = `<p style="color: blue;">🔄 Predicting...</p>`;
+
+
+
     // 3) Demo request to the prediction API
     // { predicted_spaces: 10, predicted_score: 0.85, message: "ok" }
     fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${nowStr}&lopp_time=${chosenMinutes / 15}`)
@@ -294,6 +305,9 @@ function submitPrediction(lot_id, index) {
         .catch(err => {
             console.error('Prediction request error:', err);
             alert('Prediction failed: ' + err);
+        }).finally(() => {
+            buttonEl.disabled = false;
+            buttonEl.innerText = "OK";
         });
 
 }
