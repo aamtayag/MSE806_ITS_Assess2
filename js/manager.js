@@ -207,13 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return `
       <tr>
         <td>${item.prediction_id}</td>
-        <td>${item.lot_id}</td>
-        <td>${item.prediction_time}</td>
-        <td>${item.predicted_occupied_spaces || 'N/A'}</td>
-        <td>${item.predicted_available_spaces || 'N/A'}</td>
-        <td>${item.predicted_occupancy_rate || 'N/A'}</td>
-        <td>${item.confidence_score || 'N/A'}</td>
-        <td>${item.model_version || 'N/A'}</td>
+        <td>${item.parking_lot_id}</td>
+        <td>${item.prediction_description}</td>
+        <td>${item.prediction_datetime}</td>
+        <td>${item.model || 'N/A'}</td>
+        <td>${item.predicted_value || 'N/A'}</td>
         <td>${item.created_at}</td>
         <td>
           <button class="btn btn-sm btn-primary" onclick="editPrediction(${item.prediction_id})">Edit</button>
@@ -230,16 +228,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const savePrediction = () => {
+        let dt = document.getElementById('input-create-prediction-time').value;
+        dt = dt.replace('T', ' ') + ":00";
         const predictionData = {
-            lot_id: document.getElementById('input-create-lot-id').value,
-            prediction_time: document.getElementById('input-create-prediction-time').value,
-            predicted_occupied_spaces: document.getElementById('input-create-predicted-occupied').value || null,
-            predicted_available_spaces: document.getElementById('input-create-predicted-available').value || null,
-            predicted_occupancy_rate: document.getElementById('input-create-predicted-occupancy').value || null,
-            confidence_score: document.getElementById('input-create-confidence-score').value || null,
-            model_version: document.getElementById('input-create-model-version').value || null
+            parking_lot_id: document.getElementById('input-create-lot-id').value,
+            prediction_description: document.getElementById('input-create-prediction-description').value,
+            prediction_datetime: dt,
+            predicted_value: document.getElementById('input-create-predicted-value').value || null,
+            model: document.getElementById('input-create-model').value || null
         };
-
         fetch(`${baseURL}/prediction`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -255,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.editPrediction = (predictionId) => {
+        console.log(`editPrediction called with ID: ${predictionId}`);
         fetch(`${baseURL}/prediction/${predictionId}`)
             .then(res => res.json())
             .then(data => {
@@ -262,14 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(data.message);
                 } else {
                     document.getElementById('input-update-prediction-id').value = data.prediction_id;
-                    document.getElementById('input-update-lot-id').value = data.lot_id;
+                    document.getElementById('input-update-lot-id').value = data.parking_lot_id;
                     // Replace the space with "T" to fit the datetime-local format
-                    document.getElementById('input-update-prediction-time').value = data.prediction_time.replace(' ', 'T');
-                    document.getElementById('input-update-predicted-occupied').value = data.predicted_occupied_spaces || '';
-                    document.getElementById('input-update-predicted-available').value = data.predicted_available_spaces || '';
-                    document.getElementById('input-update-predicted-occupancy').value = data.predicted_occupancy_rate || '';
-                    document.getElementById('input-update-confidence-score').value = data.confidence_score || '';
-                    document.getElementById('input-update-model-version').value = data.model_version || '';
+                    document.getElementById('input-update-prediction-time').value = data.prediction_datetime.replace(' ', 'T');
+                    document.getElementById('input-update-prediction-description').value = data.prediction_description || '';
+                    document.getElementById('input-update-predicted-value').value = data.predicted_value || '';
+                    document.getElementById('input-update-model').value = data.model || '';
                     modalUpdatePrediction.show();
                 }
             })
@@ -279,13 +275,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const updatePrediction = () => {
         const predictionId = document.getElementById('input-update-prediction-id').value;
         const predictionData = {
-            lot_id: document.getElementById('input-update-lot-id').value,
-            prediction_time: document.getElementById('input-update-prediction-time').value,
-            predicted_occupied_spaces: document.getElementById('input-update-predicted-occupied').value || null,
-            predicted_available_spaces: document.getElementById('input-update-predicted-available').value || null,
-            predicted_occupancy_rate: document.getElementById('input-update-predicted-occupancy').value || null,
-            confidence_score: document.getElementById('input-update-confidence-score').value || null,
-            model_version: document.getElementById('input-update-model-version').value || null
+            parking_lot_id: document.getElementById('input-update-lot-id').value,
+            prediction_datetime: document.getElementById('input-update-prediction-time').value,
+            prediction_description: document.getElementById('input-update-prediction-description').value,
+            predicted_value: document.getElementById('input-update-predicted-value').value || null,
+            model: document.getElementById('input-update-model').value || null
         };
 
         fetch(`${baseURL}/prediction/${predictionId}`, {

@@ -124,7 +124,6 @@ function setInfoWindow(lot) {
     currentInfoWindow.setContent(`
         <h3>${lot.name}</h3>
         <p>Available: ${lot.available_spaces} / ${lot.total_spaces}</p>
-        <p>Price: ${lot.price_per_hour}</p>
         <p>Distance: ${lot.distance.toFixed(2)} km</p>
         <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
     `);
@@ -163,7 +162,6 @@ function updateParkingList() {
       <strong>${lot.name} ${lot.best_lot ? "<span class='best-label'>🏅 Best 🏅</span>" : ""}</strong><br>
       Distance: ${lot.distance.toFixed(2)} km<br>
       Parking space: ${lot.available_spaces} / ${lot.total_spaces}<br>
-      Price: ${lot.price_per_hour}<br>
       Score: ${lot.score}<br>
       <button onclick="viewParking(${index})">View</button>
       <button onclick="navigateToParking(${lot.latitude}, ${lot.longitude})">Navigate</button>
@@ -177,7 +175,7 @@ function updateParkingList() {
         <select id="prediction-select-${index}">
           ${generateTimeOptions()} 
         </select>
-        <button onclick="submitPrediction(${lot.lot_id}, ${index},${lot.score})">OK</button>
+        <button onclick="submitPrediction(${lot.lot_id}, ${index})">OK</button>
 
         <div id="prediction-result-${index}" class="prediction-result" style="margin-top: 10px; color: #333;"></div>
       </div>
@@ -269,7 +267,7 @@ function togglePredictionSection(index) {
     }
 }
 
-function submitPrediction(lot_id, index, score) {
+function submitPrediction(lot_id, index) {
     // 1) Get the number of minutes selected by the user
     const selectEl = document.getElementById(`prediction-select-${index}`);
     const chosenMinutes = parseInt(selectEl.value, 10);
@@ -282,7 +280,7 @@ function submitPrediction(lot_id, index, score) {
 
     // 3) Demo request to the prediction API
     // { predicted_spaces: 10, predicted_score: 0.85, message: "ok" }
-    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${nowStr}&lopp_time=${chosenMinutes / 15}&score=${score}`)
+    fetch(`${window.API_CONFIG.API_BASE_URL}/api/predict?lot_id=${lot_id}&predition_time=${nowStr}&lopp_time=${chosenMinutes / 15}`)
         .then(response => response.json())
         .then(data => {
             // 4) Display the data returned by the backend + the time calculated above to the page

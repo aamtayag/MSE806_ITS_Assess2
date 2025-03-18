@@ -275,30 +275,25 @@ def get_prediction(prediction_id):
 
 
 def create_prediction(
-    lot_id,
-    prediction_time,
-    predicted_occupied_spaces,
-    predicted_available_spaces,
-    predicted_occupancy_rate,
-    confidence_score,
-    model_version,
+    parking_lot_id,
+    prediction_description,
+    prediction_datetime,
+    predicted_value,
+    model,
 ):
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT INTO ai_predictions (lot_id, prediction_time, predicted_occupied_spaces, predicted_available_spaces, 
-                                   predicted_occupancy_rate, confidence_score, model_version)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ai_predictions (parking_lot_id, prediction_description, prediction_datetime, predicted_value, model)
+        VALUES (?, ?, ?, ?, ?)
     """,
         (
-            lot_id,
-            prediction_time,
-            predicted_occupied_spaces,
-            predicted_available_spaces,
-            predicted_occupancy_rate,
-            confidence_score,
-            model_version,
+            parking_lot_id,
+            prediction_description,
+            prediction_datetime,
+            predicted_value,
+            model,
         ),
     )
     conn.commit()
@@ -309,31 +304,26 @@ def create_prediction(
 
 def update_prediction(
     prediction_id,
-    lot_id,
-    prediction_time,
-    predicted_occupied_spaces,
-    predicted_available_spaces,
-    predicted_occupancy_rate,
-    confidence_score,
-    model_version,
+    parking_lot_id,
+    prediction_description,
+    prediction_datetime,
+    predicted_value,
+    model,
 ):
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(
         """
         UPDATE ai_predictions
-        SET lot_id = ?, prediction_time = ?, predicted_occupied_spaces = ?, predicted_available_spaces = ?, 
-            predicted_occupancy_rate = ?, confidence_score = ?, model_version = ?
+        SET parking_lot_id = ?, prediction_datetime = ?, prediction_description = ?, predicted_value = ?, model = ?
         WHERE prediction_id = ?
     """,
         (
-            lot_id,
-            prediction_time,
-            predicted_occupied_spaces,
-            predicted_available_spaces,
-            predicted_occupancy_rate,
-            confidence_score,
-            model_version,
+            parking_lot_id,
+            prediction_datetime,
+            prediction_description,
+            predicted_value,
+            model,
             prediction_id,
         ),
     )
@@ -351,7 +341,7 @@ def delete_prediction(prediction_id):
     conn.close()
 
 
-def predictparkinglot(prediction_time, parkinglot_id, lopp_time, score):
+def predictparkinglot(prediction_time, parkinglot_id, lopp_time):
     try:
         # Parse the string as a datetime object, and then take out the date part
         format_prediction_time = datetime.strptime(prediction_time, "%Y-%m-%d %H:%M:%S")
@@ -381,11 +371,9 @@ def predictparkinglot(prediction_time, parkinglot_id, lopp_time, score):
     print("parking_lot", parking_lot)
     create_prediction(
         parkinglot_id,
+        f"{format_prediction_time} predict: {lopp_time * 15} minutes",
         prediction_time,
         predict,
-        parking_lot["available_spaces"],
-        parking_lot["available_spaces"] / parking_lot["total_spaces"],
-        score,
         model_type,
     )
     return predict

@@ -7,6 +7,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from threading import Timer
 import service
 import model_training.lite_predict as predition_model
+from dotenv import load_dotenv
 
 from service import (
     recommend_parking,
@@ -24,6 +25,9 @@ KEY_FILE = os.path.join(CERT_DIR, "key.pem")
 
 DEFAULT_DISTANCE_SET = {0.5, 1.0, 3.0, 5.0}
 DEFAULT_DISTANCE = 3.0
+
+load_dotenv()
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 # Create a Flask application, using the current directory as a static file directory
 app = Flask(__name__, static_folder=".", static_url_path="")
@@ -51,6 +55,16 @@ def get_local_ip():
 def index():
     return send_from_directory(BASE_DIR, "index.html")
 
+# -------------------------------
+# Config API
+# -------------------------------
+@app.route("/config")
+def get_config():
+    user = request.headers.get("Authorization")
+    if user != "your-secret-token":
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    return jsonify({"google_maps_api_key": GOOGLE_MAPS_API_KEY})
 
 # -------------------------------
 # API
@@ -91,16 +105,14 @@ def api_predict():
         lot_id = int(request.args["lot_id"])
         predition_time = str(request.args["predition_time"])
         lopp_time = int(request.args["lopp_time"])
-        score = float(request.args["score"])
         print(f"lot_id : {lot_id}")
         print(f"predition_time : {predition_time}")
         print(f"lopp_time : {lopp_time}")
-        print(f"score : {score}")
 
     except ValueError:
         return jsonify({"error": "Invalid hour_offset"}), 400
 
-    result = service.predictparkinglot(predition_time, lot_id, lopp_time, score)
+    result = service.predictparkinglot(predition_time, lot_id, lopp_time)
     return jsonify(result)
 
 
@@ -135,19 +147,20 @@ def create_lot():
 def get_lot(lot_id):
     """get single record by lot_id"""
     row = service.get_parking_lot(lot_id)
+    print(f"parking_lot result row : {row}")
     if row:
         # (lot_id, name, address, latitude, longitude, total_spaces, available_spaces, created_at, updated_at)
         return jsonify(
             {
-                "lot_id": row[0],
-                "name": row[1],
-                "address": row[2],
-                "latitude": row[3],
-                "longitude": row[4],
-                "total_spaces": row[5],
-                "available_spaces": row[6],
-                "created_at": row[7],
-                "updated_at": row[8],
+                "lot_id": row["lot_id"],
+                "name": row["name"],
+                "address": row["address"],
+                "latitude": row["latitude"],
+                "longitude": row["longitude"],
+                "total_spaces": row["total_spaces"],
+                "available_spaces": row["available_spaces"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
             }
         )
     else:
@@ -223,6 +236,7 @@ def delete_lot(lot_id):
 @app.route("/predictions", methods=["GET"])
 def get_all_predictions():
     predictions = service.get_all_predictions()
+    print(f"predictions : {predictions}")
     return jsonify(predictions)
 
 
@@ -238,14 +252,13 @@ def get_prediction(prediction_id):
 @app.route("/prediction", methods=["POST"])
 def create_prediction():
     data = request.json
+    print(f"create_prediction data : {data}")
     prediction_id = service.create_prediction(
-        data["lot_id"],
-        data["prediction_time"],
-        data.get("predicted_occupied_spaces"),
-        data.get("predicted_available_spaces"),
-        data.get("predicted_occupancy_rate"),
-        data.get("confidence_score"),
-        data.get("model_version"),
+        data["parking_lot_id"],
+        data["prediction_description"],
+        data["prediction_datetime"],
+        data["predicted_value"],
+        data["model"],
     )
     return (
         jsonify({"message": "Prediction created", "prediction_id": prediction_id}),
@@ -256,15 +269,14 @@ def create_prediction():
 @app.route("/prediction/<int:prediction_id>", methods=["PUT"])
 def update_prediction(prediction_id):
     data = request.json
+    print(f"update_prediction data : {data}")
     service.update_prediction(
         prediction_id,
-        data["lot_id"],
-        data["prediction_time"],
-        data.get("predicted_occupied_spaces"),
-        data.get("predicted_available_spaces"),
-        data.get("predicted_occupancy_rate"),
-        data.get("confidence_score"),
-        data.get("model_version"),
+        data["parking_lot_id"],
+        data["prediction_description"],
+        data["prediction_datetime"],
+        data["predicted_value"],
+        data["model"],
     )
     return jsonify({"message": "Prediction updated"})
 

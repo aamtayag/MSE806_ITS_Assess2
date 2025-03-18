@@ -54,10 +54,21 @@
   <script src="js/map.js" defer></script>
 
   <!-- Google Maps JS-->
-  <script async defer>
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
-    document.head.appendChild(script);
+  <script>
+    fetch("/config", {
+      method: "GET",
+      headers: {
+        "Authorization": "your-secret-token"
+      }
+    })
+      .then(response => response.json())
+      .then(config => {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${config.google_maps_api_key}&libraries=places&callback=initMap&language=en`;
+        script.defer = true;
+        document.head.appendChild(script);
+      })
+      .catch(error => console.error("Failed to load Google Maps API Key:", error));
   </script>
 
   <!-- Show/hide the right panel function -->

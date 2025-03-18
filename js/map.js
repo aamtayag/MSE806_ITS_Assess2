@@ -124,6 +124,8 @@ async function setUserLocation(lat, lng) {
     loadParkingData();
 }
 
+
+
 /**
  * Fetches the address from Google Geocoding and updates currentLocation.
  */
@@ -147,20 +149,31 @@ function updateCurrentLocationText() {
     locationTextElem.innerHTML = `<strong>Current Location:</strong> 📍 ${currentLocation.address}`;
 }
 
-// ========== Get address by lat/lng (reverse geocoding) ==========
-function getAddressFromLatLng(lat, lng) {
-    return new Promise((resolve, reject) => {
-        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.results && data.results[0]) {
-                    resolve(data.results[0].formatted_address);
-                } else {
-                    resolve(`Lat: ${lat}, Lng: ${lng}`);
-                }
-            })
-            .catch(err => reject(err));
+async function getGoogleMapsApiKey() {
+    const response = await fetch("/config", {
+        method: "GET",
+        headers: {
+            "Authorization": "your-secret-token"
+        }
     });
+    const data = await response.json();
+    return data.google_maps_api_key;
+}
+
+// ========== Get address by lat/lng (reverse geocoding) ==========
+async function getAddressFromLatLng(lat, lng) {
+    try {
+        const apiKey = await getGoogleMapsApiKey();
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=en&key=${apiKey}`);
+        const data = await response.json();
+        if (data.results && data.results[0]) {
+            return data.results[0].formatted_address;
+        }
+        return `Lat: ${lat}, Lng: ${lng}`;
+    } catch (error) {
+        console.error("Failed to get address:", error);
+        return `Lat: ${lat}, Lng: ${lng}`;
+    }
 }
 
 // ========== Save the current location to localStorage ==========
