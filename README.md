@@ -12,7 +12,12 @@ This is a web-based Parking Lot Management System that provides functionalities 
 
 ## Git Clone
 ```sh
+# Enter the directory you need to download
+# Clone
 git clone https://github.com/aamtayag/MSE806_ITS_Assess2
+
+# Go to the directory
+cd MSE806_ITS_Assess2
 ```
 
 
@@ -25,6 +30,11 @@ git clone https://github.com/aamtayag/MSE806_ITS_Assess2
 ### 1. Create a Python Virtual Environment
 ```sh
 python -m venv itsenv
+
+# Please Use Python3.9
+C:\Users\LiangWen\AppData\Local\Programs\Python\Python39\python.exe -m venv itsenv
+
+# Mac
 source venv/bin/activate  
 
 # On Windows use: 
